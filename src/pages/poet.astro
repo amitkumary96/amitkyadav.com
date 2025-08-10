@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const posts = Object.values(import.meta.glob('../content/poet/*.{md,mdx}', { eager: true })).sort((a,b)=> new Date(b.frontmatter.date) - new Date(a.frontmatter.date));
+---
+<BaseLayout title="Poet - Amit Kumar Yadav">
+  <h1 class="text-2xl font-bold mb-4">Poet</h1>
+  <p class="mb-4 text-gray-600">Poems in Hindi (Devanagari). Use Markdown files under <code>src/content/poet/</code>.</p>
+  <ul class="space-y-4">
+    {posts.length ? posts.map(p => (
+      <li class="p-3 border rounded" key={p.frontmatter.title}>
+        <a href={p.url} class="font-semibold">{p.frontmatter.title}</a>
+        <div class="text-sm text-gray-600">{p.frontmatter.excerpt}</div>
+      </li>
+    )) : <li class="text-gray-600">No poems yet.</li>}
+  </ul>
+</BaseLayout>

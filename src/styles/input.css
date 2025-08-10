@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Remove CSS variable theming — let Tailwind handle dark mode */
+
+/* Optional: Keep some base font and link styling */
+body {
+  font-family: Inter, system-ui, sans-serif;
+}
+
+a {
+  @apply text-red-500; /* or any accent you prefer */
+}

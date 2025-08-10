@@ -1,0 +1,29 @@
+---
+/**
+ * This is a catch-all route for any slug that doesn’t have a dedicated page.
+ * Since we’re deploying as a static site, we must declare all paths in advance.
+ * Right now, we return an empty array so Astro won’t try to build unknown pages.
+ */
+
+export async function getStaticPaths() {
+  // ✅ No dynamic pages for now
+  return [];
+}
+
+const { slug } = Astro.params;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page Not Found</title>
+  </head>
+  <body class="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-gray-800">
+    <h1 class="text-3xl font-bold mb-4">404 — Page Not Found</h1>
+    <p class="mb-6">The page <code>/{slug ? slug.join('/') : ''}</code> does not exist.</p>
+    <a href="/" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+      Go Home
+    </a>
+  </body>
+</html>

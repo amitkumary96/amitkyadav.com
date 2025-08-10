@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.DS_Store
+static/uploads
+# Ignore private key
+id_rsa_amitkyadav
+id_rsa_amitkyadav.pub

@@ -1,0 +1,47 @@
+---
+import { useState, useEffect } from 'react';
+---
+
+<button
+  id="theme-toggle"
+  aria-label="Toggle Dark Mode"
+  class="p-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 transition-colors duration-300 shadow hover:shadow-md"
+  onclick="toggleTheme()"
+>
+  <svg
+    id="theme-icon"
+    class="w-6 h-6 text-gray-800 dark:text-gray-200 transition-transform duration-300"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+  >
+    <!-- Icon changes dynamically via JS -->
+  </svg>
+</button>
+
+<script is:inline>
+  function setTheme(dark) {
+    if (dark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      document.getElementById('theme-icon').innerHTML =
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m8.66-9h1m-18 0h1m14.14 5.14l.7.7m-12.02-12.02l.7.7m0 12.02l-.7.7m12.02-12.02l-.7.7M12 5a7 7 0 000 14 7 7 0 000-14z" />';
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      document.getElementById('theme-icon').innerHTML =
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21.64 13a9 9 0 11-9-9c0 0 0 0 0 0a7 7 0 009 9z" />';
+    }
+  }
+
+  function toggleTheme() {
+    setTheme(!document.documentElement.classList.contains('dark'));
+  }
+
+  (function () {
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(saved ? saved === 'dark' : prefersDark);
+  })();
+</script>

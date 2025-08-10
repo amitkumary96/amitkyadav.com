@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Smooth scrolling + dark mode transition */
+html {
+  scroll-behavior: smooth;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+@layer base {
+  /* Default light mode */
+  body {
+    @apply bg-white text-gray-900 font-sans antialiased;
+  }
+
+  /* Dark mode root */
+  html.dark {
+    @apply bg-gray-900 text-gray-100;
+  }
+
+  /* Ensure body also adapts in dark mode */
+  html.dark body {
+    @apply bg-gray-900 text-gray-100;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Links */
+  a {
+    @apply text-accent hover:text-accent/80 dark:hover:text-accent/70 
+           hover:underline transition-colors duration-200 
+           focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-block px-4 py-2 rounded-lg bg-accent text-white font-medium 
+           shadow-md hover:bg-accent/90 
+           transition-transform duration-200 
+           hover:scale-[1.03] active:scale-[0.97]
+           focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2;
+  }
+
+  /* Card Containers */
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 
+           transition-colors duration-300 
+           hover:-translate-y-1 hover:shadow-2xl;
+  }
+
+  /* Container utility */
+  .container {
+    @apply max-w-5xl mx-auto px-4;
+  }
+}

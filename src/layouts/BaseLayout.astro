@@ -1,0 +1,76 @@
+---
+import "../styles/global.css";
+import DarkModeToggle from "../components/DarkModeToggle.astro";
+
+const { title = "Amit Kumar Yadav" } = Astro.props;
+---
+
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+  </head>
+  <body class="flex flex-col min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
+    
+    <!-- Navbar -->
+    <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50 transition-colors duration-300">
+      <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
+        
+        <!-- Logo -->
+        <a href="/" class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 hover:opacity-80 transition">
+          amitkyadav.com
+        </a>
+        
+        <!-- Navigation Links -->
+        <ul class="hidden md:flex space-x-6 text-gray-700 dark:text-gray-200">
+          <li><a href="/" class="hover:text-indigo-500 dark:hover:text-indigo-400">Home</a></li>
+          <li><a href="/poet" class="hover:text-indigo-500 dark:hover:text-indigo-400">Poet</a></li>
+          <li><a href="/engineer" class="hover:text-indigo-500 dark:hover:text-indigo-400">Engineer</a></li>
+          <li><a href="/life" class="hover:text-indigo-500 dark:hover:text-indigo-400">Life</a></li>
+        </ul>
+
+        <!-- Right side actions -->
+        <div class="flex items-center space-x-4">
+          <DarkModeToggle />
+          <!-- Mobile Menu Button -->
+          <button id="mobile-menu-btn" class="md:hidden p-2 rounded-md bg-gray-200 dark:bg-gray-700">
+            ☰
+          </button>
+        </div>
+      </nav>
+
+      <!-- Mobile Nav -->
+      <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <ul class="flex flex-col p-4 space-y-2">
+          <li><a href="/" class="block py-2 hover:text-indigo-500 dark:hover:text-indigo-400">Home</a></li>
+          <li><a href="/poet" class="block py-2 hover:text-indigo-500 dark:hover:text-indigo-400">Poet</a></li>
+          <li><a href="/engineer" class="block py-2 hover:text-indigo-500 dark:hover:text-indigo-400">Engineer</a></li>
+          <li><a href="/life" class="block py-2 hover:text-indigo-500 dark:hover:text-indigo-400">Life</a></li>
+        </ul>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 container mx-auto px-4 py-8">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 dark:bg-gray-950 text-white py-6 mt-8">
+      <div class="container mx-auto text-center text-sm text-gray-400">
+        © {new Date().getFullYear()} Amit Kumar Yadav — Built with ❤️ using Astro & TailwindCSS
+      </div>
+    </footer>
+
+    <!-- Mobile menu toggle script -->
+    <script is:inline>
+      const btn = document.getElementById("mobile-menu-btn");
+      const menu = document.getElementById("mobile-menu");
+      btn.addEventListener("click", () => {
+        menu.classList.toggle("hidden");
+      });
+    </script>
+
+  </body>
+</html>

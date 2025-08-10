@@ -1,0 +1,119 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import "../styles/global.css";
+
+const postFiles = import.meta.glob('../content/**/*.{md,mdx}', { eager: true });
+
+// Helper: get latest post for a category
+function latestFor(category) {
+  const list = Object.values(postFiles).filter(p => p.frontmatter?.category === category)
+    .sort((a, b) => new Date(b.frontmatter.date) - new Date(a.frontmatter.date));
+  return list[0] ?? null;
+}
+
+function formatDate(date) {
+  if (!date) return '';
+  return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+const latestPoet = latestFor('poet');
+const latestEngineer = latestFor('engineer');
+const latestLife = latestFor('life');
+---
+
+<BaseLayout title="Home - Amit Kumar Yadav">
+  <!-- Dark mode toggle -->
+  <div class="flex justify-end mb-6">
+    <button 
+      id="theme-toggle" 
+      class="px-4 py-2 text-sm font-medium bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600 transition"
+    >
+      Toggle Dark Mode
+    </button>
+  </div>
+
+  <div class="text-center mb-12">
+    <h1 class="text-5xl font-extrabold mb-4 text-indigo-600 dark:text-indigo-400">
+      Hi, I'm Amit Kumar Yadav
+    </h1>
+    <p class="text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
+      Senior Engineer, poet, and storyteller. This site hosts technical articles and heartfelt Hindi poems.
+    </p>
+  </div>
+
+  <div class="grid md:grid-cols-3 gap-8">
+    <!-- Poet -->
+    <a href={latestPoet?.url || '#'} class="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow p-6 block">
+      <h2 class="text-2xl font-semibold mb-4 text-indigo-500 dark:text-indigo-400">Latest Poet</h2>
+      {latestPoet ? (
+        <article>
+          <h3 class="font-bold text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
+            {latestPoet.frontmatter.title}
+          </h3>
+          <span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded dark:bg-indigo-700 dark:text-indigo-100">
+            {formatDate(latestPoet.frontmatter.date)}
+          </span>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{latestPoet.frontmatter.excerpt}</p>
+        </article>
+      ) : (
+        <p class="text-gray-600 dark:text-gray-400">No poems yet. Add Markdown files to <code>src/content/poet/</code>.</p>
+      )}
+    </a>
+
+    <!-- Engineer -->
+    <a href={latestEngineer?.url || '#'} class="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow p-6 block">
+      <h2 class="text-2xl font-semibold mb-4 text-indigo-500 dark:text-indigo-400">Latest Engineer</h2>
+      {latestEngineer ? (
+        <article>
+          <h3 class="font-bold text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
+            {latestEngineer.frontmatter.title}
+          </h3>
+          <span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded dark:bg-indigo-700 dark:text-indigo-100">
+            {formatDate(latestEngineer.frontmatter.date)}
+          </span>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{latestEngineer.frontmatter.excerpt}</p>
+        </article>
+      ) : (
+        <p class="text-gray-600 dark:text-gray-400">No engineering posts yet. Add Markdown files to <code>src/content/engineer/</code>.</p>
+      )}
+    </a>
+
+    <!-- Life -->
+    <a href={latestLife?.url || '#'} class="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow p-6 block">
+      <h2 class="text-2xl font-semibold mb-4 text-indigo-500 dark:text-indigo-400">Latest Life</h2>
+      {latestLife ? (
+        <article>
+          <h3 class="font-bold text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
+            {latestLife.frontmatter.title}
+          </h3>
+          <span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded dark:bg-indigo-700 dark:text-indigo-100">
+            {formatDate(latestLife.frontmatter.date)}
+          </span>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{latestLife.frontmatter.excerpt}</p>
+        </article>
+      ) : (
+        <p class="text-gray-600 dark:text-gray-400">No life posts yet. Add Markdown files to <code>src/content/life/</code>.</p>
+      )}
+    </a>
+  </div>
+
+  <script>
+    // Dark mode toggle script
+    const toggleBtn = document.getElementById('theme-toggle');
+    const root = document.documentElement;
+
+    // Apply saved theme
+    if (localStorage.getItem('theme') === 'dark') {
+      root.classList.add('dark');
+    }
+
+    toggleBtn.addEventListener('click', () => {
+      root.classList.toggle('dark');
+      if (root.classList.contains('dark')) {
+        localStorage.setItem('theme', 'dark');
+      } else {
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  </script>
+</BaseLayout>

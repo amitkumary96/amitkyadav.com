@@ -1,0 +1,39 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "static/uploads"
+public_folder: "/uploads"
+
+collections:
+  - name: "poet"
+    label: "Poet"
+    folder: "src/content/poet"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { name: "title", label: "Title" }
+      - { name: "date", label: "Date", widget: "datetime" }
+      - { name: "excerpt", label: "Excerpt", widget: "string" }
+      - { name: "body", label: "Body", widget: "markdown" }
+  - name: "engineer"
+    label: "Engineer"
+    folder: "src/content/engineer"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { name: "title", label: "Title" }
+      - { name: "date", label: "Date", widget: "datetime" }
+      - { name: "tags", label: "Tags", widget: "list" }
+      - { name: "excerpt", label: "Excerpt", widget: "string" }
+      - { name: "body", label: "Body", widget: "markdown" }
+  - name: "life"
+    label: "Life"
+    folder: "src/content/life"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { name: "title", label: "Title" }
+      - { name: "date", label: "Date", widget: "datetime" }
+      - { name: "excerpt", label: "Excerpt", widget: "string" }
+      - { name: "body", label: "Body", widget: "markdown" }
