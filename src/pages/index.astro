@@ -30,16 +30,6 @@ const latestLife = latestFor('life');
 ---
 
 <BaseLayout title="Home - Amit Kumar Yadav">
-  <!-- Dark mode toggle -->
-  <div class="flex justify-end mb-6">
-    <button 
-      id="theme-toggle" 
-      class="px-4 py-2 text-sm font-medium bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600 transition"
-    >
-      Toggle Dark Mode
-    </button>
-  </div>
-
   <div class="text-center mb-12">
     <h1 class="text-5xl font-extrabold mb-4 text-indigo-600 dark:text-indigo-400">
       Hi, I'm Amit Kumar Yadav
@@ -104,24 +94,4 @@ const latestLife = latestFor('life');
       )}
     </a>
   </div>
-
-  <script>
-    // Dark mode toggle script
-    const toggleBtn = document.getElementById('theme-toggle');
-    const root = document.documentElement;
-
-    // Apply saved theme
-    if (localStorage.getItem('theme') === 'dark') {
-      root.classList.add('dark');
-    }
-
-    toggleBtn.addEventListener('click', () => {
-      root.classList.toggle('dark');
-      if (root.classList.contains('dark')) {
-        localStorage.setItem('theme', 'dark');
-      } else {
-        localStorage.setItem('theme', 'light');
-      }
-    });
-  </script>
 </BaseLayout>
