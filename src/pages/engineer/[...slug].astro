@@ -1,0 +1,73 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await import.meta.glob('../../content/engineer/*.{md,mdx}', { eager: true });
+
+  return Object.entries(posts).map(([path, post]) => {
+    const slug = path.split('/').pop().replace(/\.(md|mdx)$/, '');
+    return {
+      params: { slug },
+      props: { post }
+    };
+  });
+}
+
+const { post } = Astro.props;
+const { Content } = post;
+const { title, date, excerpt, tags } = post.frontmatter;
+
+function formatDate(date) {
+  if (!date) return '';
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+---
+
+<BaseLayout
+  title={`${title} - Amit Kumar Yadav`}
+  description={excerpt}
+>
+  <article class="max-w-3xl mx-auto">
+    <!-- Back Link -->
+    <a
+      href="/engineer"
+      class="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:underline mb-6"
+    >
+      ← Back to Engineer
+    </a>
+
+    <!-- Article Header -->
+    <header class="mb-8">
+      <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+        {title}
+      </h1>
+      <div class="flex flex-wrap items-center gap-4 text-gray-600 dark:text-gray-400">
+        <time>{formatDate(date)}</time>
+        {tags && tags.length > 0 && (
+          <div class="flex flex-wrap gap-2">
+            {tags.map(tag => (
+              <span class="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </header>
+
+    <!-- Article Content -->
+    <div class="prose prose-lg dark:prose-invert max-w-none
+                prose-headings:text-gray-900 dark:prose-headings:text-gray-100
+                prose-p:text-gray-700 dark:prose-p:text-gray-300
+                prose-a:text-indigo-600 dark:prose-a:text-indigo-400
+                prose-strong:text-gray-900 dark:prose-strong:text-gray-100
+                prose-code:text-indigo-600 dark:prose-code:text-indigo-400
+                prose-pre:bg-gray-900 dark:prose-pre:bg-gray-950">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>

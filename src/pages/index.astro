@@ -4,11 +4,19 @@ import "../styles/global.css";
 
 const postFiles = import.meta.glob('../content/**/*.{md,mdx}', { eager: true });
 
-// Helper: get latest post for a category
+// Helper: get latest post for a category with URL
 function latestFor(category) {
-  const list = Object.values(postFiles).filter(p => p.frontmatter?.category === category)
+  const entries = Object.entries(postFiles)
+    .map(([path, post]) => {
+      const slug = path.split('/').pop().replace(/\.(md|mdx)$/, '');
+      return {
+        ...post,
+        url: `/${category}/${slug}`
+      };
+    })
+    .filter(p => p.frontmatter?.category === category)
     .sort((a, b) => new Date(b.frontmatter.date) - new Date(a.frontmatter.date));
-  return list[0] ?? null;
+  return entries[0] ?? null;
 }
 
 function formatDate(date) {

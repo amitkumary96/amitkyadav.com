@@ -1,0 +1,15 @@
+# robots.txt for amitkyadav.com
+
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://amitkyadav.com/sitemap.xml
+
+# Disallow admin pages
+Disallow: /admin/
+
+# Allow all crawlers to access content
+Allow: /poet/
+Allow: /engineer/
+Allow: /life/

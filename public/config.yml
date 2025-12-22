@@ -8,7 +8,7 @@ backend:
 #   repo: amitkumary96/amitkyadav.com
 #   branch: master
 
-media_folder: "static/uploads"
+media_folder: "public/uploads"
 public_folder: "/uploads"
 
 collections:
