@@ -1,0 +1,45 @@
+backend:
+  name: github
+  repo: amitkumary96/amitkyadav.com
+  branch: master
+
+media_folder: "public/uploads"
+public_folder: "/uploads"
+
+collections:
+  - name: "poet"
+    label: "Poet"
+    folder: "src/content/poet"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Date", name: "date", widget: "datetime" }
+      - { label: "Category", name: "category", widget: "hidden", default: "poet" }
+      - { label: "Excerpt", name: "excerpt", widget: "string" }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+  - name: "engineer"
+    label: "Engineer"
+    folder: "src/content/engineer"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Date", name: "date", widget: "datetime" }
+      - { label: "Category", name: "category", widget: "hidden", default: "engineer" }
+      - { label: "Tags", name: "tags", widget: "list" }
+      - { label: "Excerpt", name: "excerpt", widget: "string" }
+      - { label: "Body", name: "body", widget: "markdown" }
+
+  - name: "life"
+    label: "Life"
+    folder: "src/content/life"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Date", name: "date", widget: "datetime" }
+      - { label: "Category", name: "category", widget: "hidden", default: "life" }
+      - { label: "Excerpt", name: "excerpt", widget: "string" }
+      - { label: "Body", name: "body", widget: "markdown" }

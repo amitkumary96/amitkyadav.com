@@ -10,8 +10,7 @@
     "postinstall": "echo 'Run npm run dev to start the dev server'"
   },
   "dependencies": {
-    "astro": "^4.15.0",
-    "axios": "^1.4.0"
+    "astro": "^4.15.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
