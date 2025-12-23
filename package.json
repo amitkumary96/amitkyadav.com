@@ -7,7 +7,8 @@
     "build": "astro build && node scripts/generate-sitemap.js && node scripts/generate-rss.js",
     "preview": "astro preview",
     "format": "prettier --write .",
-    "postinstall": "echo 'Run npm run dev to start the dev server'"
+    "cms": "npx decap-server",
+    "postinstall": "echo 'Run npm run dev to start the dev server. Access CMS at http://localhost:4321/admin'"
   },
   "dependencies": {
     "astro": "^4.15.0"

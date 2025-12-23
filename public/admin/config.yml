@@ -1,10 +1,15 @@
 backend:
-  name: github
-  repo: amitkumary96/amitkyadav.com
+  name: git-gateway
   branch: master
+
+# Note: CMS only works locally (npm run dev)
+# Access at http://localhost:4321/admin
+# Changes are saved to files and deployed via GitHub Actions
 
 media_folder: "public/uploads"
 public_folder: "/uploads"
+
+local_backend: true
 
 collections:
   - name: "poet"
