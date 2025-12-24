@@ -1,20 +1,14 @@
 ---
-title: "Sample Poem - Welcome"
-date: 2025-01-15T10:00:00.000Z
-category: "poet"
-excerpt: "A sample poem to demonstrate how content works on your website."
+title: "जो सोया नहीं.. "
+date: 2025-12-24T09:40:00.000+05:30
+category: poet
+excerpt: "जींदगी और उसके खयाल "
 ---
-
-# Welcome to My Poetry
-
-This is a sample poem to show you how the CMS works.
-You can edit this or delete it once you start adding your own content.
-
-The stars above whisper tales,
-Of dreams that never fade,
-In words we find our trails,
-Through the verses we have made.
-
----
-
-*This is just an example. Replace with your own beautiful poetry!*
+जो सोया नहीं है रातों में भी,
+वो खयाल जिंदगी का है,
+जो चुपचाप सुन रहा है सब, 
+वो मौन हाल जिंदगी का है|
+सुकून मिलता है अकेले में ,
+ये बात अक्सर कहते है लोग,
+इसी सन्नाटे में जो खामोश नही है,
+वो हाल अपनी जिंदगी का है|
