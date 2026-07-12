@@ -1,6 +1,11 @@
 backend:
-  name: git-gateway
-  branch: main
+  name: github
+  repo: amitkumary96/amitkyadav.com
+  branch: master
+  base_url: https://api.github.com
+  site_domain: amitkyadav.com
+  client_id: Ov23lif7ssUuwSwcMIvP
+  client_secret: a6f0c7812b64b2530012f6adaf358034dbcb4127
 
 media_folder: "static/uploads"
 public_folder: "/uploads"
