@@ -1,16 +1,80 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-const posts = Object.values(import.meta.glob('../content/engineer/*.{md,mdx}', { eager: true })).sort((a,b)=> new Date(b.frontmatter.date) - new Date(a.frontmatter.date));
+
+const postFiles = import.meta.glob('../content/engineer/*.{md,mdx}', { eager: true });
+const posts = Object.entries(postFiles).map(([path, post]) => {
+  const slug = path.split('/').pop().replace(/\.(md|mdx)$/, '');
+  return {
+    ...post,
+    slug,
+    url: `/engineer/${slug}`
+  };
+}).sort((a, b) => new Date(b.frontmatter.date) - new Date(a.frontmatter.date));
+
+function formatDate(date) {
+  if (!date) return '';
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
 ---
-<BaseLayout title="Engineer - Amit Kumar Yadav">
-  <h1 class="text-2xl font-bold mb-4">Engineer</h1>
-  <p class="mb-4 text-gray-600">Technical posts. Use Markdown files under <code>src/content/engineer/</code>.</p>
-  <ul class="space-y-4">
-    {posts.length ? posts.map(p => (
-      <li class="p-3 border rounded" key={p.frontmatter.title}>
-        <a href={p.url} class="font-semibold">{p.frontmatter.title}</a>
-        <div class="text-sm text-gray-600">{p.frontmatter.excerpt}</div>
-      </li>
-    )) : <li class="text-gray-600">No posts yet.</li>}
-  </ul>
+
+<BaseLayout
+  title="Engineer - Amit Kumar Yadav"
+  description="Technical articles, QA insights, and software testing best practices by Amit Kumar Yadav"
+>
+  <div class="max-w-4xl mx-auto">
+    <header class="mb-12">
+      <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+        Engineering
+      </h1>
+      <p class="text-lg text-gray-600 dark:text-gray-400">
+        Technical articles on software testing, quality assurance, and engineering best practices.
+      </p>
+    </header>
+
+    {posts.length > 0 ? (
+      <div class="space-y-8">
+        {posts.map(post => (
+          <article class="border-b border-gray-200 dark:border-gray-700 pb-8">
+            <a href={post.url} class="group block">
+              <h2 class="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                {post.frontmatter.title}
+              </h2>
+              <div class="flex flex-wrap items-center gap-3 mb-3">
+                <time class="text-sm text-gray-500 dark:text-gray-500">
+                  {formatDate(post.frontmatter.date)}
+                </time>
+                {post.frontmatter.tags && post.frontmatter.tags.length > 0 && (
+                  <div class="flex flex-wrap gap-2">
+                    {post.frontmatter.tags.map(tag => (
+                      <span class="px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {post.frontmatter.excerpt && (
+                <p class="mt-3 text-gray-700 dark:text-gray-300">
+                  {post.frontmatter.excerpt}
+                </p>
+              )}
+              <span class="inline-block mt-4 text-indigo-600 dark:text-indigo-400 group-hover:underline">
+                Read more →
+              </span>
+            </a>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div class="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <p class="text-gray-600 dark:text-gray-400">
+          No articles yet. Start writing in the CMS!
+        </p>
+      </div>
+    )}
+  </div>
 </BaseLayout>

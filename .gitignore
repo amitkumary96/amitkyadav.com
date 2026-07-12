@@ -1,8 +1,42 @@
+# Dependencies
 node_modules
+
+# Build output
 dist
+
+# Astro cache and generated files
+.astro
+
+# Environment variables
 .env
+.env.local
+.env.*.local
+
+# IDE and editors
+.vscode
+.idea
+*.swp
+*.swo
+*.code-workspace
+.project
+
+# OS files
 .DS_Store
-static/uploads
-# Ignore private key
+Thumbs.db
+Desktop.ini
+.AppleDouble
+.LSOverride
+*~
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# User uploads (CMS content)
+public/uploads
+
+# Private keys (deployment)
 id_rsa_amitkyadav
 id_rsa_amitkyadav.pub
