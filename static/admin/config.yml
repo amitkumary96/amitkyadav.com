@@ -6,6 +6,8 @@ backend:
   site_domain: amitkyadav.com
   client_id: Ov23lif7ssUuwSwcMIvP
   client_secret: a6f0c7812b64b2530012f6adaf358034dbcb4127
+  auth_scope: repo
+  api_root: https://api.github.com
 
 media_folder: "static/uploads"
 public_folder: "/uploads"
