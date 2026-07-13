@@ -1,13 +1,5 @@
-backend:
-  name: github
-  repo: amitkumary96/amitkyadav.com
-  branch: master
-  base_url: https://api.github.com
-  site_domain: amitkyadav.com
-  client_id: Ov23lif7ssUuwSwcMIvP
-  client_secret: a6f0c7812b64b2530012f6adaf358034dbcb4127
-  auth_scope: repo
-  api_root: https://api.github.com
+# This file is kept for reference but not used with the PHP admin system
+# The PHP admin system (login.php, dashboard.php) handles authentication
 
 media_folder: "static/uploads"
 public_folder: "/uploads"
