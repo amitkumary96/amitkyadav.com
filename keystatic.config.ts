@@ -1,43 +1,46 @@
-import { defineConfig, text, date, document } from '@keystatic/core';
+import { collection, config, fields } from '@keystatic/core';
 
-export const keystaticConfig = defineConfig({
+export default config({
   storage: { kind: 'local' },
   collections: {
-    poet: {
+    poet: collection({
       label: 'Poet',
-      path: 'src/content/poet',
-      format: 'md',
+      slugField: 'title',
+      path: 'src/content/poet/*',
+      format: { contentField: 'content' },
       schema: {
-        title: text({ label: 'Title' }),
-        date: date({ label: 'Date' }),
-        category: text({ label: 'Category' }),
-        excerpt: text({ label: 'Excerpt' }),
-        content: document({ label: 'Content' })
+        title: fields.slug({ name: { label: 'Title' } }),
+        date: fields.date({ label: 'Date' }),
+        category: fields.text({ label: 'Category' }),
+        excerpt: fields.text({ label: 'Excerpt' }),
+        content: fields.document({ label: 'Content' })
       }
-    },
-    engineer: {
+    }),
+    engineer: collection({
       label: 'Engineer',
-      path: 'src/content/engineer',
-      format: 'md',
+      slugField: 'title',
+      path: 'src/content/engineer/*',
+      format: { contentField: 'content' },
       schema: {
-        title: text({ label: 'Title' }),
-        date: date({ label: 'Date' }),
-        category: text({ label: 'Category' }),
-        excerpt: text({ label: 'Excerpt', optional: true }),
-        content: document({ label: 'Content' })
+        title: fields.slug({ name: { label: 'Title' } }),
+        date: fields.date({ label: 'Date' }),
+        category: fields.text({ label: 'Category' }),
+        excerpt: fields.text({ label: 'Excerpt', validation: { isRequired: false } }),
+        content: fields.document({ label: 'Content' })
       }
-    },
-    life: {
+    }),
+    life: collection({
       label: 'Life',
-      path: 'src/content/life',
-      format: 'md',
+      slugField: 'title',
+      path: 'src/content/life/*',
+      format: { contentField: 'content' },
       schema: {
-        title: text({ label: 'Title' }),
-        date: date({ label: 'Date' }),
-        category: text({ label: 'Category' }),
-        excerpt: text({ label: 'Excerpt', optional: true }),
-        content: document({ label: 'Content' })
+        title: fields.slug({ name: { label: 'Title' } }),
+        date: fields.date({ label: 'Date' }),
+        category: fields.text({ label: 'Category' }),
+        excerpt: fields.text({ label: 'Excerpt', validation: { isRequired: false } }),
+        content: fields.document({ label: 'Content' })
       }
-    }
+    })
   }
 });

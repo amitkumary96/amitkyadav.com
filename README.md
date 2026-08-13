@@ -35,3 +35,36 @@ This generates the static site in `dist/`. The build script also runs sitemap an
 ## Translation
 
 The site uses LibreTranslate (https://libretranslate.de) by default via client-side calls in `src/utils/translate.js`. For production, consider using a self-hosted instance or swapping to Google Translate API and updating the adapter.
+
+## Editing content with Keystatic (local)
+
+This project provides a local Keystatic admin to edit content stored as Markdown files.
+
+1. Install dependencies:
+```bash
+npm ci
+```
+
+2. Run the dev server. Keystatic admin is enabled in development only:
+```bash
+npm run dev
+```
+
+3. Open the Keystatic admin UI in your browser:
+- http://localhost:3000/keystatic
+
+How the content editing workflow works:
+- Edit content locally via the Keystatic admin UI. Changes are written to `src/content/*` as Markdown files.
+- Commit and push changes to the `staging` branch:
+```bash
+git add src/content
+git commit -m "Update content: <short message>"
+git push origin staging
+```
+- The repository has a GitHub Actions workflow that builds and FTP-deploys `./dist` to `/public_html/staging/` when `staging` is pushed.
+- After previewing on staging, open a PR from `staging` to `master`. Merging to `master` triggers the production deploy workflow, which uploads `./dist` to `/public_html/`.
+
+Repository secrets required for deployments:
+- `FTP_HOST`
+- `FTP_USERNAME`
+- `FTP_PASSWORD`

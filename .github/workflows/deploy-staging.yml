@@ -1,30 +1,29 @@
-name: Deploy to Hostinger
+name: Deploy Staging (FTP)
 
 on:
   push:
     branches:
-      - master
+      - staging
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: '18'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Build site
+      - name: Build
         run: npm run build
 
-      - name: Deploy to Hostinger via FTP
+      - name: Deploy to Hostinger (staging)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -33,6 +32,5 @@ jobs:
           port: 21
           protocol: ftp
           local-dir: ./dist/
-          server-dir: /public_html/
-          state-name: .ftp-deploy-sync-state.json
-          dry-run: false
+          server-dir: /public_html/staging/
+          state-name: .ftp-deploy-sync-state-staging.json
