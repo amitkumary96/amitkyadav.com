@@ -8,10 +8,12 @@
     "preview": "astro preview",
     "format": "prettier --write .",
     "cms": "npx decap-server",
-    "postinstall": "echo 'Run npm run dev to start the dev server. Access CMS at http://localhost:4321/admin'"
+    "postinstall": "echo 'Run npm run dev to start the dev server. Access Keystatic at http://localhost:3000/keystatic'"
   },
   "dependencies": {
-    "astro": "^4.15.0"
+    "astro": "^4.15.0",
+    "@keystatic/core": "^0.1.0",
+    "@keystatic/astro": "^0.1.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
