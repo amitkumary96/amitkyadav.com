@@ -1,0 +1,21 @@
+# Normalise line endings to LF in the repository so a Windows checkout and the
+# Linux CI builder agree. Without this, git warned on every `add` and diffs
+# risked showing whole files as changed when only one line moved.
+* text=auto eol=lf
+
+# Binary assets — never normalise, never diff as text.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.webp   binary
+*.avif   binary
+*.pdf    binary
+*.mp3    binary
+*.m4a    binary
+*.mp4    binary
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.otf    binary
