@@ -1,11 +1,13 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
+export const prerender = true;
+
 export async function getStaticPaths() {
-  const posts = await import.meta.glob('../../content/engineer/*.{md,mdx}', { eager: true });
+  const posts = await import.meta.glob('../../content/engineer/*.{md,mdx,mdoc}', { eager: true });
 
   return Object.entries(posts).map(([path, post]) => {
-    const slug = path.split('/').pop().replace(/\.(md|mdx)$/, '');
+    const slug = path.split('/').pop().replace(/\.(md|mdx|mdoc)$/, '');
     return {
       params: { slug },
       props: { post }

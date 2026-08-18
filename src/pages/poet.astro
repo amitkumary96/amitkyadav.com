@@ -1,9 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-const postFiles = import.meta.glob('../content/poet/*.{md,mdx}', { eager: true });
+const postFiles = import.meta.glob('../content/poet/*.{md,mdx,mdoc}', { eager: true });
 const posts = Object.entries(postFiles).map(([path, post]) => {
-  const slug = path.split('/').pop().replace(/\.(md|mdx)$/, '');
+  const slug = path.split('/').pop().replace(/\.(md|mdx|mdoc)$/, '');
   return {
     ...post,
     slug,

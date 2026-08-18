@@ -2,13 +2,13 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import "../styles/global.css";
 
-const postFiles = import.meta.glob('../content/**/*.{md,mdx}', { eager: true });
+const postFiles = import.meta.glob('../content/**/*.{md,mdx,mdoc}', { eager: true });
 
 // Helper: get latest post for a category with URL
 function latestFor(category) {
   const entries = Object.entries(postFiles)
     .map(([path, post]) => {
-      const slug = path.split('/').pop().replace(/\.(md|mdx)$/, '');
+  const slug = path.split('/').pop().replace(/\.(md|mdx|mdoc)$/, '');
       return {
         ...post,
         url: `/${category}/${slug}`
