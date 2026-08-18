@@ -5,13 +5,18 @@ import DarkModeToggle from "../components/DarkModeToggle.astro";
 const {
   title = "Amit Kumar Yadav - Senior QA Engineer, Poet & Storyteller",
   description = "Personal website of Amit Kumar Yadav - Senior QA Engineer with expertise in software testing, quality assurance, and automation. Sharing poems, technical insights, and life experiences.",
-  image = "/og-image.jpg",
+  image,
   url = Astro.url.href,
   type = "website"
 } = Astro.props;
 
 const siteUrl = "https://amitkyadav.com";
-const ogImage = new URL(image, siteUrl).href;
+
+// Only advertise a social image once a real one exists. The previous default
+// pointed at /og-image.jpg, which has never been in the repo — so every share
+// asked Facebook, LinkedIn and X to fetch a 404. Per-post images are generated
+// as part of the design pass; until then, no tag is better than a broken one.
+const ogImage = image ? new URL(image, siteUrl).href : null;
 ---
 
 <html lang="en" class="scroll-smooth">
@@ -34,18 +39,18 @@ const ogImage = new URL(image, siteUrl).href;
     <meta property="og:url" content={url} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={ogImage} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
     <meta property="og:site_name" content="Amit Kumar Yadav" />
 
     <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
     <meta name="twitter:url" content={url} />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={ogImage} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
     <!-- RSS Feed -->
     <link rel="alternate" type="application/rss+xml" title="Amit Kumar Yadav RSS Feed" href="/rss.xml" />

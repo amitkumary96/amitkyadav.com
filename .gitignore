@@ -34,8 +34,9 @@ yarn-error.log*
 .pnpm-debug.log*
 *.log
 
-# User uploads (CMS content)
-public/uploads
+# NOTE: public/uploads is deliberately NOT ignored. It was, and that silently
+# discarded every CMS image upload — the file landed on disk, git skipped it,
+# and the deploy shipped a broken image with no error anywhere.
 
 # Private keys (deployment)
 id_rsa_amitkyadav
