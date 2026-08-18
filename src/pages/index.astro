@@ -1,97 +1,140 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import "../styles/global.css";
+import PostCard from '../components/PostCard.astro';
+import { SECTIONS, SITE } from '../config/site';
+import { formatDateShort, getAllPosts, getLatestPerSection, isoDate } from '../lib/posts';
 
-const postFiles = import.meta.glob('../content/**/*.{md,mdx,mdoc}', { eager: true });
+export const prerender = true;
 
-// Helper: get latest post for a category with URL
-function latestFor(category) {
-  const entries = Object.entries(postFiles)
-    .map(([path, post]) => {
-  const slug = path.split('/').pop().replace(/\.(md|mdx|mdoc)$/, '');
-      return {
-        ...post,
-        url: `/${category}/${slug}`
-      };
-    })
-    .filter(p => p.frontmatter?.category === category)
-    .sort((a, b) => new Date(b.frontmatter.date) - new Date(a.frontmatter.date));
-  return entries[0] ?? null;
-}
-
-function formatDate(date) {
-  if (!date) return '';
-  return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-const latestPoet = latestFor('poet');
-const latestEngineer = latestFor('engineer');
-const latestLife = latestFor('life');
+const posts = await getAllPosts();
+const [featured, ...rest] = posts;
+const recent = rest.slice(0, 4);
+const latestPerSection = await getLatestPerSection();
 ---
 
-<BaseLayout title="Home - Amit Kumar Yadav">
-  <div class="text-center mb-12">
-    <h1 class="text-5xl font-extrabold mb-4 text-indigo-600 dark:text-indigo-400">
-      Hi, I'm Amit Kumar Yadav
-    </h1>
-    <p class="text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
-      Senior QA Engineer, poet, and storyteller. This site hosts technical articles and heartfelt Hindi poems.
-    </p>
-  </div>
+<BaseLayout>
+  <div class="register-literary">
+    <section class="article-measure">
+      <h1
+        class="font-serif text-[clamp(2rem,1.4rem+2.6vw,3rem)] font-semibold leading-[1.08] -tracking-[0.015em]"
+      >
+        {SITE.title}
+      </h1>
+      <p class="mt-4 text-[1.15rem] leading-relaxed text-ink-soft">
+        Senior QA engineer by trade. I write about testing, automation and AI on
+        one side of this site, and Hindi and Hinglish verse and stories on the
+        other. Both halves are me.
+      </p>
+    </section>
 
-  <div class="grid md:grid-cols-3 gap-8">
-    <!-- Poet -->
-    <a href={latestPoet?.url || '#'} class="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow p-6 block">
-      <h2 class="text-2xl font-semibold mb-4 text-indigo-500 dark:text-indigo-400">Latest Poet</h2>
-      {latestPoet ? (
-        <article>
-          <h3 class="font-bold text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
-            {latestPoet.frontmatter.title}
-          </h3>
-          <span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded dark:bg-indigo-700 dark:text-indigo-100">
-            {formatDate(latestPoet.frontmatter.date)}
-          </span>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{latestPoet.frontmatter.excerpt}</p>
-        </article>
-      ) : (
-        <p class="text-gray-600 dark:text-gray-400">No poems yet. Add Markdown files to <code>src/content/poet/</code>.</p>
-      )}
-    </a>
+    {
+      featured && (
+        <section class="mt-14 border-t border-rule-firm pt-8" aria-labelledby="latest-heading">
+          <h2 id="latest-heading" class="label label-accent mb-5">
+            Most recent
+          </h2>
 
-    <!-- Engineer -->
-    <a href={latestEngineer?.url || '#'} class="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow p-6 block">
-      <h2 class="text-2xl font-semibold mb-4 text-indigo-500 dark:text-indigo-400">Latest Engineer</h2>
-      {latestEngineer ? (
-        <article>
-          <h3 class="font-bold text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
-            {latestEngineer.frontmatter.title}
-          </h3>
-          <span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded dark:bg-indigo-700 dark:text-indigo-100">
-            {formatDate(latestEngineer.frontmatter.date)}
-          </span>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{latestEngineer.frontmatter.excerpt}</p>
-        </article>
-      ) : (
-        <p class="text-gray-600 dark:text-gray-400">No engineering posts yet. Add Markdown files to <code>src/content/engineer/</code>.</p>
-      )}
-    </a>
+          <a href={featured.url} class="group block no-underline">
+            <p class="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span class="label label-accent">{featured.section.label}</span>
+              <time class="meta" datetime={isoDate(featured.date)}>
+                {formatDateShort(featured.date)}
+              </time>
+            </p>
 
-    <!-- Life -->
-    <a href={latestLife?.url || '#'} class="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow p-6 block">
-      <h2 class="text-2xl font-semibold mb-4 text-indigo-500 dark:text-indigo-400">Latest Life</h2>
-      {latestLife ? (
-        <article>
-          <h3 class="font-bold text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
-            {latestLife.frontmatter.title}
-          </h3>
-          <span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded dark:bg-indigo-700 dark:text-indigo-100">
-            {formatDate(latestLife.frontmatter.date)}
-          </span>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{latestLife.frontmatter.excerpt}</p>
-        </article>
-      ) : (
-        <p class="text-gray-600 dark:text-gray-400">No life posts yet. Add Markdown files to <code>src/content/life/</code>.</p>
-      )}
-    </a>
+            <h3
+              lang={featured.lang}
+              class:list={[
+                'text-[clamp(1.6rem,1.2rem+1.6vw,2.2rem)] leading-[1.15] transition-colors group-hover:text-madder-ink',
+                featured.section.register === 'workshop'
+                  ? 'font-sans font-bold tracking-tight'
+                  : 'font-serif font-semibold',
+              ]}
+            >
+              {featured.title}
+            </h3>
+
+            {
+              featured.excerpt && (
+                <p lang={featured.lang} class="mt-3 max-w-[50ch] text-ink-soft">
+                  {featured.excerpt}
+                </p>
+              )
+            }
+
+            <span class="label mt-4 inline-block text-madder-ink">Read it →</span>
+          </a>
+        </section>
+      )
+    }
+
+    {
+      recent.length > 0 && (
+        <section class="mt-14" aria-labelledby="recent-heading">
+          <h2 id="recent-heading" class="label mb-6 border-t border-rule pt-8">
+            Also recently
+          </h2>
+          <div class="flex flex-col gap-7">
+            {recent.map((post) => (
+              <PostCard post={post} showSection />
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      posts.length === 0 && (
+        <section class="mt-14 border-t border-rule pt-8">
+          <p class="text-ink-soft">
+            Nothing published yet. The first pieces are on their way.
+          </p>
+        </section>
+      )
+    }
+
+    <section class="mt-16 border-t border-rule-firm pt-8" aria-labelledby="sections-heading">
+      <h2 id="sections-heading" class="label mb-6">Four things I write</h2>
+
+      <ul class="grid gap-px overflow-hidden rounded-sm bg-rule sm:grid-cols-2">
+        {
+          SECTIONS.map((section) => {
+            const latest = latestPerSection.get(section.id);
+            return (
+              <li class="bg-paper">
+                <a
+                  href={`/${section.id}`}
+                  class="group flex h-full flex-col gap-2 p-5 no-underline transition-colors hover:bg-surface"
+                >
+                  <span class="flex items-baseline gap-2.5">
+                    <span
+                      class:list={[
+                        'text-[1.15rem] font-semibold text-ink transition-colors group-hover:text-madder-ink',
+                        section.register === 'workshop' ? 'font-sans' : 'font-serif',
+                      ]}
+                    >
+                      {section.label}
+                    </span>
+                    {section.native && (
+                      <span lang="hi" class="font-deva text-[0.95rem] text-ink-faint">
+                        {section.native}
+                      </span>
+                    )}
+                  </span>
+
+                  <span class="text-[0.95rem] leading-snug text-ink-soft">
+                    {section.blurb}
+                  </span>
+
+                  <span class="meta mt-auto pt-2">
+                    {latest ? `Latest: ${latest.title}` : 'Nothing published yet'}
+                  </span>
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </section>
   </div>
 </BaseLayout>

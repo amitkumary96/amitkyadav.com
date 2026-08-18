@@ -1,0 +1,43 @@
+# Apache configuration for amitkyadav.com on Hostinger.
+#
+# Every block is wrapped in <IfModule> so a missing module is skipped rather
+# than returning a 500 for the whole site.
+
+# Astro emits 404.html, but Apache does not serve it for unknown URLs unless
+# told to. Without this line Hostinger shows its own default error page.
+ErrorDocument 404 /404.html
+
+# Serve pre-compressed text where the browser accepts it.
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/json
+  AddOutputFilterByType DEFLATE application/rss+xml image/svg+xml
+</IfModule>
+
+# Fingerprinted assets under /_astro/ can be cached indefinitely; their names
+# change whenever their contents do. HTML must always be revalidated so a
+# deploy is visible immediately.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 hour"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/avif "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js|woff2)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+
+  # Sensible defaults that cost nothing on a static site.
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

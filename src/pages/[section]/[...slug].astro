@@ -1,0 +1,40 @@
+---
+import PostLayout from '../../layouts/PostLayout.astro';
+import Callout from '../../components/mdx/Callout.astro';
+import Figure from '../../components/mdx/Figure.astro';
+import Gallery from '../../components/mdx/Gallery.astro';
+import Video from '../../components/mdx/Video.astro';
+import { getAllPosts, getSeriesPosition, type Post, type SeriesPosition } from '../../lib/posts';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const posts = await getAllPosts();
+
+  return Promise.all(
+    posts.map(async (post) => ({
+      params: { section: post.section.id, slug: post.slug },
+      props: { post, seriesPosition: await getSeriesPosition(post) },
+    })),
+  );
+}
+
+interface Props {
+  post: Post;
+  seriesPosition?: SeriesPosition;
+}
+
+const { post, seriesPosition } = Astro.props;
+const { Content } = await post.entry.render();
+
+/**
+ * Components the CMS can insert into a post body. MDX resolves unimported
+ * capitalised tags from this map, so a writer never has to add an import line —
+ * and .md posts simply ignore it.
+ */
+const components = { Callout, Figure, Gallery, Video };
+---
+
+<PostLayout post={post} seriesPosition={seriesPosition}>
+  <Content components={components} />
+</PostLayout>

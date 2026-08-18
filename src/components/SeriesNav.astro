@@ -1,0 +1,72 @@
+---
+import type { SeriesPosition } from '../lib/posts';
+
+interface Props {
+  position: SeriesPosition;
+}
+
+const { position } = Astro.props;
+const { series, index, total, previous, next } = position;
+---
+
+<nav
+  class="mt-14 border-t border-rule-firm pt-6"
+  aria-label={`Navigation within ${series.name}`}
+>
+  <p class="label mb-4">
+    Part {index + 1} of {total} &middot;{' '}
+    <a href={`/series/${series.slug}`} class="text-madder-ink">{series.name}</a>
+  </p>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    {
+      previous ? (
+        <a
+          href={previous.url}
+          class="group block rounded-sm border border-rule p-4 no-underline transition-colors hover:border-rule-firm"
+        >
+          <span class="label">← Previous</span>
+          <span
+            lang={previous.lang}
+            class="mt-1.5 block font-serif text-ink transition-colors group-hover:text-madder-ink"
+          >
+            {previous.title}
+          </span>
+        </a>
+      ) : (
+        <div
+          class="rounded-sm border border-dashed border-rule p-4"
+          aria-hidden="true"
+        >
+          <span class="label">Beginning</span>
+          <span class="mt-1.5 block text-ink-faint">This is where it starts</span>
+        </div>
+      )
+    }
+
+    {
+      next ? (
+        <a
+          href={next.url}
+          class="group block rounded-sm border border-rule p-4 text-right no-underline transition-colors hover:border-rule-firm"
+        >
+          <span class="label">Next →</span>
+          <span
+            lang={next.lang}
+            class="mt-1.5 block font-serif text-ink transition-colors group-hover:text-madder-ink"
+          >
+            {next.title}
+          </span>
+        </a>
+      ) : (
+        <div
+          class="rounded-sm border border-dashed border-rule p-4 text-right"
+          aria-hidden="true"
+        >
+          <span class="label">Latest</span>
+          <span class="mt-1.5 block text-ink-faint">More to come</span>
+        </div>
+      )
+    }
+  </div>
+</nav>

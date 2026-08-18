@@ -1,0 +1,130 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from './BaseLayout.astro';
+import Recitation from '../components/Recitation.astro';
+import SeriesNav from '../components/SeriesNav.astro';
+import { formatDate, isoDate, slugify, type Post, type SeriesPosition } from '../lib/posts';
+
+interface Props {
+  post: Post;
+  seriesPosition?: SeriesPosition;
+}
+
+const { post, seriesPosition } = Astro.props;
+const { section, format, lang } = post;
+const { cover, coverAlt } = post.entry.data;
+
+const isVerse = format === 'verse';
+---
+
+<BaseLayout
+  title={post.title}
+  description={post.excerpt ?? `${post.title} — ${section.label} by Amit Kumar Yadav`}
+  ogType="article"
+  lang={lang === 'hi' ? 'hi' : lang === 'hi-Latn' ? 'hi-Latn' : 'en'}
+  noindex={post.draft}
+>
+  <div class:list={[`register-${section.register}`]}>
+    <article class="article-measure mx-auto">
+      <a
+        href={`/${section.id}`}
+        class="label label-accent inline-block no-underline hover:text-madder-ink"
+      >
+        ← {section.label}{section.native ? ` · ${section.native}` : ''}
+      </a>
+
+      <header class="mt-5 border-b border-rule pb-6">
+        {
+          post.draft && (
+            <p class="label mb-3" style="color: var(--madder)">
+              Draft — not published to the live site
+            </p>
+          )
+        }
+
+        <h1
+          lang={lang}
+          class:list={[
+            'text-[clamp(2rem,1.4rem+2.4vw,2.85rem)] leading-[1.12]',
+            section.register === 'workshop'
+              ? 'font-sans font-bold tracking-tight'
+              : 'font-serif font-semibold -tracking-[0.012em]',
+          ]}
+        >
+          {post.title}
+        </h1>
+
+        <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <time class="meta" datetime={isoDate(post.date)}>{formatDate(post.date)}</time>
+          <span class="meta" aria-hidden="true">·</span>
+          <span class="meta">
+            {isVerse ? 'Verse' : `${post.readingMinutes} min read`}
+          </span>
+          {
+            seriesPosition && (
+              <>
+                <span class="meta" aria-hidden="true">·</span>
+                <a href={`/series/${seriesPosition.series.slug}`} class="meta hover:text-ink">
+                  {seriesPosition.series.name}, part {seriesPosition.index + 1} of{' '}
+                  {seriesPosition.total}
+                </a>
+              </>
+            )
+          }
+        </div>
+
+        {
+          post.excerpt && !isVerse && (
+            <p lang={lang} class="mt-5 max-w-[46ch] text-[1.05rem] text-ink-soft">
+              {post.excerpt}
+            </p>
+          )
+        }
+      </header>
+
+      {
+        cover && coverAlt && (
+          <Image
+            src={cover}
+            alt={coverAlt}
+            widths={[480, 800, 1200]}
+            sizes="(min-width: 48rem) 42rem, 100vw"
+            class="mt-8 w-full rounded-sm border border-rule"
+            loading="eager"
+          />
+        )
+      }
+
+      <div
+        lang={lang}
+        class:list={[
+          'mt-9',
+          isVerse ? 'article-verse' : 'article-prose prose max-w-none',
+        ]}
+      >
+        <slot />
+      </div>
+
+      {post.audio && <Recitation src={post.audio} label={post.audioLabel} />}
+
+      {
+        post.tags.length > 0 && (
+          <ul class="mt-10 flex flex-wrap gap-2 border-t border-rule pt-6">
+            {post.tags.map((tag) => (
+              <li>
+                <a
+                  href={`/tags/${slugify(tag)}`}
+                  class="label inline-block rounded-sm border border-rule px-2.5 py-1 no-underline transition-colors hover:border-rule-firm hover:text-ink"
+                >
+                  {tag}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+
+      {seriesPosition && <SeriesNav position={seriesPosition} />}
+    </article>
+  </div>
+</BaseLayout>

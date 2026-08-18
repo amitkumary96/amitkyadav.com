@@ -1,44 +1,38 @@
-const colors = require("tailwindcss/colors");
-
+/**
+ * Colours and type resolve to the CSS custom properties defined in
+ * src/styles/global.css. Dark mode therefore lives in exactly one place — the
+ * `.dark` token block — instead of being duplicated as a `dark:` variant on
+ * every element that carries a colour.
+ */
 module.exports = {
-  darkMode: "class", // Enable class-based dark mode
+  darkMode: "class",
   content: ["./src/**/*.{astro,html,js,jsx,ts,tsx,md,mdx}"],
   theme: {
-    container: {
-      center: true,
-      padding: "1rem",
-      screens: {
-        sm: "640px",
-        md: "768px",
-        lg: "1024px",
-        xl: "1280px",
-      },
-    },
     extend: {
       colors: {
-        primary: "#0f172a", // Deep navy
-        accent: "#ef4444", // Red accent
-        neutral: colors.zinc, // Neutral grays
+        paper: "var(--paper)",
+        surface: "var(--surface)",
+        "surface-raised": "var(--surface-raised)",
+        ink: "var(--ink)",
+        "ink-soft": "var(--ink-soft)",
+        "ink-faint": "var(--ink-faint)",
+        rule: "var(--rule)",
+        "rule-firm": "var(--rule-firm)",
+        madder: "var(--madder)",
+        "madder-ink": "var(--madder-ink)",
+        "madder-wash": "var(--madder-wash)",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        serif: ["Merriweather", "serif"],
+        serif: "var(--font-serif)",
+        deva: "var(--font-deva)",
+        sans: "var(--font-sans)",
+        mono: "var(--font-mono)",
       },
-      boxShadow: {
-        smooth: "0 4px 14px rgba(0, 0, 0, 0.1)",
+      maxWidth: {
+        measure: "var(--measure, 36rem)",
       },
       transitionTimingFunction: {
-        "in-expo": "cubic-bezier(0.95, 0.05, 0.795, 0.035)",
         "out-expo": "cubic-bezier(0.19, 1, 0.22, 1)",
-      },
-      animation: {
-        fadeIn: "fadeIn 0.5s ease-in-out",
-      },
-      keyframes: {
-        fadeIn: {
-          "0%": { opacity: 0 },
-          "100%": { opacity: 1 },
-        },
       },
     },
   },

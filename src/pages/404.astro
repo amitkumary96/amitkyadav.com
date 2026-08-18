@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SECTIONS } from '../config/site';
+
+export const prerender = true;
+
+/**
+ * Astro emits this as 404.html. On Apache that file is not served
+ * automatically, so public/.htaccess points ErrorDocument at it — without that,
+ * Hostinger shows its own default 404 instead of this page.
+ */
+---
+
+<BaseLayout
+  title="Page not found"
+  description="That page does not exist on amitkyadav.com."
+>
+  <div class="register-literary">
+    <div class="article-measure py-8">
+      <p class="label label-accent mb-4">404</p>
+      <h1 class="font-serif text-[clamp(1.9rem,1.4rem+2vw,2.6rem)] font-semibold leading-tight">
+        That page isn’t here
+      </h1>
+      <p class="mt-4 text-ink-soft">
+        The link may be old, or I may have moved something. Either way, the
+        writing is all still below.
+      </p>
+
+      <ul class="mt-9 grid gap-px overflow-hidden rounded-sm bg-rule sm:grid-cols-2">
+        {
+          SECTIONS.map((section) => (
+            <li class="bg-paper">
+              <a
+                href={`/${section.id}`}
+                class="group flex h-full flex-col gap-1.5 p-5 no-underline transition-colors hover:bg-surface"
+              >
+                <span class="flex items-baseline gap-2.5">
+                  <span
+                    class:list={[
+                      'font-semibold text-ink transition-colors group-hover:text-madder-ink',
+                      section.register === 'workshop' ? 'font-sans' : 'font-serif',
+                    ]}
+                  >
+                    {section.label}
+                  </span>
+                  {section.native && (
+                    <span lang="hi" class="font-deva text-sm text-ink-faint">
+                      {section.native}
+                    </span>
+                  )}
+                </span>
+                <span class="text-[0.95rem] leading-snug text-ink-soft">{section.blurb}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <p class="mt-8">
+        <a href="/" class="label text-madder-ink no-underline">← Back to the front page</a>
+      </p>
+    </div>
+  </div>
+</BaseLayout>

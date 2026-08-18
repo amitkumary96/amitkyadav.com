@@ -1,0 +1,52 @@
+---
+/**
+ * Adds a caption to a single image. The image itself stays ordinary markdown
+ * inside the block, so Astro's image pipeline still optimises it:
+ *
+ *   <Figure caption="The desk where most of this gets written.">
+ *
+ *   ![A cluttered writing desk](./desk.jpg)
+ *
+ *   </Figure>
+ *
+ * The caption is presentational; the alt text in the markdown is what a screen
+ * reader announces, so both are worth writing.
+ */
+interface Props {
+  caption: string;
+  /** Break out of the text measure for a wider image. */
+  wide?: boolean;
+}
+
+const { caption, wide = false } = Astro.props;
+---
+
+<figure class:list={['not-prose', 'my-9', wide && 'figure-wide']}>
+  <div class="figure-body">
+    <slot />
+  </div>
+  <figcaption class="meta mt-2.5">{caption}</figcaption>
+</figure>
+
+<style>
+  .figure-body :global(p) {
+    margin: 0;
+  }
+
+  .figure-body :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 2px;
+    border: 1px solid var(--rule);
+  }
+
+  /* Widen symmetrically without knowing the container width, and only where
+     there is room to spare. */
+  @media (min-width: 60rem) {
+    .figure-wide {
+      width: min(52rem, 118%);
+      margin-inline: calc((100% - min(52rem, 118%)) / 2);
+    }
+  }
+</style>

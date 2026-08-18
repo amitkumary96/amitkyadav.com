@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAllTags } from '../../lib/posts';
+
+export const prerender = true;
+
+const tags = await getAllTags();
+---
+
+<BaseLayout
+  title="Tags"
+  description="Every subject written about on amitkyadav.com, across engineering, poetry, stories and life."
+>
+  <div class="register-literary">
+    <header class="article-measure border-b border-rule pb-7">
+      <h1 class="font-serif text-[clamp(1.8rem,1.4rem+1.8vw,2.4rem)] font-semibold leading-tight">
+        Tags
+      </h1>
+      <p class="mt-3 max-w-[46ch] text-ink-soft">
+        Subjects cut across all four sections, so a tag can hold an engineering
+        note and a poem side by side.
+      </p>
+    </header>
+
+    <div class="article-measure mt-10">
+      {
+        tags.length > 0 ? (
+          <ul class="flex flex-wrap gap-2.5">
+            {tags.map((tag) => (
+              <li>
+                <a
+                  href={`/tags/${tag.slug}`}
+                  class="inline-flex items-baseline gap-2 rounded-sm border border-rule px-3 py-1.5 no-underline transition-colors hover:border-rule-firm"
+                >
+                  <span class="font-sans text-sm text-ink">{tag.name}</span>
+                  <span class="meta tabular-nums">{tag.count}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="rounded-sm border border-dashed border-rule px-5 py-8 text-center text-ink-soft">
+            No tags yet — they appear as soon as posts start carrying them.
+          </p>
+        )
+      }
+    </div>
+  </div>
+</BaseLayout>

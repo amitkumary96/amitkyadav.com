@@ -1,0 +1,63 @@
+---
+/**
+ * A grid of photographs.
+ *
+ * Takes its images as children rather than as a prop, so the CMS can keep
+ * writing ordinary markdown image syntax inside it:
+ *
+ *   <Gallery columns={3}>
+ *
+ *   ![Morning at the ghat](./ghat.jpg)
+ *
+ *   ![The same steps at dusk](./ghat-dusk.jpg)
+ *
+ *   </Gallery>
+ *
+ * Relative paths are still processed by Astro's image pipeline, so every image
+ * is converted, resized and lazy-loaded exactly as it would be on its own.
+ */
+interface Props {
+  columns?: 2 | 3;
+  caption?: string;
+}
+
+const { columns = 2, caption } = Astro.props;
+---
+
+<figure class="not-prose my-9">
+  <div class:list={['gallery', `gallery-${columns}`]}>
+    <slot />
+  </div>
+  {caption && <figcaption class="meta mt-2.5">{caption}</figcaption>}
+</figure>
+
+<style>
+  .gallery {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  @media (min-width: 34rem) {
+    .gallery-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .gallery-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* Markdown wraps each image in its own paragraph; flatten that away. */
+  .gallery :global(p) {
+    margin: 0;
+  }
+
+  .gallery :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 2px;
+    border: 1px solid var(--rule);
+  }
+</style>

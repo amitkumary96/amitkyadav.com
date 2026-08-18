@@ -1,0 +1,69 @@
+---
+/**
+ * A set-aside block: a note, a warning, or an authorial aside. Distinguished by
+ * a label and a rule weight rather than by colour, so the page keeps to one
+ * accent hue.
+ */
+interface Props {
+  type?: 'note' | 'warning' | 'aside';
+  title?: string;
+}
+
+const { type = 'note', title } = Astro.props;
+
+const DEFAULT_TITLES = {
+  note: 'Note',
+  warning: 'Careful',
+  aside: 'Aside',
+} as const;
+
+const heading = title ?? DEFAULT_TITLES[type];
+---
+
+<aside class:list={['callout', `callout-${type}`]}>
+  <p class="label callout-heading">{heading}</p>
+  <div class="callout-body">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .callout {
+    margin: 2rem 0;
+    padding: 1.1rem 1.25rem;
+    background-color: var(--surface);
+    border-left: 3px solid var(--rule-firm);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .callout-warning {
+    border-left-color: var(--madder);
+    background-color: var(--madder-wash);
+  }
+
+  .callout-aside {
+    border-left-style: dotted;
+    background-color: transparent;
+  }
+
+  .callout-heading {
+    margin-bottom: 0.5rem;
+  }
+
+  .callout-warning .callout-heading {
+    color: var(--madder-ink);
+  }
+
+  /* Tighten the typography plugin's paragraph rhythm inside a small box. */
+  .callout-body :global(> :first-child) {
+    margin-top: 0;
+  }
+
+  .callout-body :global(> :last-child) {
+    margin-bottom: 0;
+  }
+
+  .callout-body {
+    font-size: 0.97em;
+  }
+</style>

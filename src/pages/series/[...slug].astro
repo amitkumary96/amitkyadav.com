@@ -1,0 +1,115 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatDateShort, getAllSeries, isoDate, type Series } from '../../lib/posts';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const series = await getAllSeries();
+  return series.map((s) => ({
+    // The slug is `section/series-name`, so a story and a column of the same
+    // name in different sections never collide.
+    params: { slug: s.slug },
+    props: { series: s },
+  }));
+}
+
+interface Props {
+  series: Series;
+}
+
+const { series } = Astro.props;
+const { section, parts } = series;
+
+const first = parts[0];
+const last = parts[parts.length - 1];
+---
+
+<BaseLayout
+  title={series.name}
+  description={`${series.name} — a ${parts.length}-part ${section.label.toLowerCase()} series by Amit Kumar Yadav.`}
+>
+  <div class:list={[`register-${section.register}`]}>
+    <article class="article-measure">
+      <a
+        href={`/${section.id}`}
+        class="label label-accent inline-block no-underline hover:text-madder-ink"
+      >
+        ← {section.label}{section.native ? ` · ${section.native}` : ''}
+      </a>
+
+      <header class="mt-5 border-b border-rule pb-6">
+        <p class="label mb-3">In {parts.length} parts</p>
+        <h1
+          class:list={[
+            'text-[clamp(1.9rem,1.4rem+2.2vw,2.7rem)] leading-[1.12]',
+            section.register === 'workshop'
+              ? 'font-sans font-bold tracking-tight'
+              : 'font-serif font-semibold -tracking-[0.012em]',
+          ]}
+        >
+          {series.name}
+        </h1>
+        <p class="meta mt-4">
+          {formatDateShort(first.date)}
+          {parts.length > 1 && ` — ${formatDateShort(last.date)}`}
+        </p>
+      </header>
+
+      <ol class="mt-9 flex flex-col">
+        {
+          parts.map((part, index) => (
+            <li class="border-b border-rule last:border-0">
+              <a href={part.url} class="group flex gap-5 py-5 no-underline">
+                <span
+                  class="meta shrink-0 pt-1 tabular-nums"
+                  aria-hidden="true"
+                >
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+
+                <span class="min-w-0 flex-1">
+                  <span
+                    lang={part.lang}
+                    class:list={[
+                      'block text-[1.2rem] leading-snug text-ink transition-colors group-hover:text-madder-ink',
+                      section.register === 'workshop'
+                        ? 'font-sans font-semibold'
+                        : 'font-serif font-semibold',
+                    ]}
+                  >
+                    {part.title}
+                  </span>
+
+                  {part.excerpt && (
+                    <span lang={part.lang} class="mt-1.5 block text-ink-soft">
+                      {part.excerpt}
+                    </span>
+                  )}
+
+                  <span class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <time class="meta" datetime={isoDate(part.date)}>
+                      {formatDateShort(part.date)}
+                    </time>
+                    <span class="meta">
+                      {part.format === 'verse' ? 'Verse' : `${part.readingMinutes} min read`}
+                    </span>
+                    {part.draft && (
+                      <span class="label" style="color: var(--madder)">Draft</span>
+                    )}
+                  </span>
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+
+      <p class="mt-10 border-t border-rule pt-6">
+        <a href={first.url} class="label text-madder-ink no-underline">
+          Start from part one →
+        </a>
+      </p>
+    </article>
+  </div>
+</BaseLayout>

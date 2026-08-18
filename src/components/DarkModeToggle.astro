@@ -1,47 +1,89 @@
 ---
-// Dark mode toggle component using vanilla JS
+/**
+ * Both icons are rendered and one is hidden by CSS keyed off `.dark` on <html>.
+ * The previous version injected icon markup from JavaScript after hydration,
+ * which meant an empty button on first paint. The theme itself is applied by an
+ * inline script in BaseLayout's <head>, before the body renders, so there is no
+ * flash of the wrong colours either.
+ */
 ---
 
 <button
   id="theme-toggle"
-  aria-label="Toggle Dark Mode"
-  class="p-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 transition-colors duration-300 shadow hover:shadow-md"
-  onclick="toggleTheme()"
+  type="button"
+  aria-label="Switch to dark mode"
+  class="grid h-9 w-9 place-items-center rounded-sm border border-rule text-ink-soft transition-colors hover:border-rule-firm hover:text-ink"
 >
+  <!-- Shown in light mode: the mode you can switch to. -->
   <svg
-    id="theme-icon"
-    class="w-6 h-6 text-gray-800 dark:text-gray-200 transition-transform duration-300"
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
+    class="icon-to-dark h-[1.05rem] w-[1.05rem]"
     viewBox="0 0 24 24"
+    fill="none"
     stroke="currentColor"
+    stroke-width="1.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
   >
-    <!-- Icon changes dynamically via JS -->
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
+  </svg>
+
+  <!-- Shown in dark mode. -->
+  <svg
+    class="icon-to-light h-[1.05rem] w-[1.05rem]"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="4.2" />
+    <path
+      d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"
+    />
   </svg>
 </button>
 
+<style>
+  .icon-to-light {
+    display: none;
+  }
+
+  :global(.dark) .icon-to-light {
+    display: block;
+  }
+
+  :global(.dark) .icon-to-dark {
+    display: none;
+  }
+</style>
+
 <script is:inline>
-  function setTheme(dark) {
-    if (dark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-      document.getElementById('theme-icon').innerHTML =
-        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m8.66-9h1m-18 0h1m14.14 5.14l.7.7m-12.02-12.02l.7.7m0 12.02l-.7.7m12.02-12.02l-.7.7M12 5a7 7 0 000 14 7 7 0 000-14z" />';
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-      document.getElementById('theme-icon').innerHTML =
-        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21.64 13a9 9 0 11-9-9c0 0 0 0 0 0a7 7 0 009 9z" />';
-    }
-  }
+  (() => {
+    const button = document.getElementById('theme-toggle');
+    if (!button) return;
 
-  function toggleTheme() {
-    setTheme(!document.documentElement.classList.contains('dark'));
-  }
+    const syncLabel = () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      button.setAttribute(
+        'aria-label',
+        isDark ? 'Switch to light mode' : 'Switch to dark mode',
+      );
+    };
 
-  (function () {
-    const saved = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setTheme(saved ? saved === 'dark' : prefersDark);
+    button.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      try {
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      } catch {
+        // Private browsing can refuse storage; the toggle should still work for
+        // this page view rather than throwing.
+      }
+      syncLabel();
+    });
+
+    syncLabel();
   })();
 </script>

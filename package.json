@@ -10,7 +10,12 @@
     "postinstall": "echo 'Run npm run dev to start the dev server. Access Keystatic at http://localhost:3000/keystatic'"
   },
   "dependencies": {
+    "@astrojs/mdx": "^3.1.9",
     "@astrojs/react": "^3.6.3",
+    "@fontsource-variable/ibm-plex-sans": "^5.3.0",
+    "@fontsource-variable/literata": "^5.3.0",
+    "@fontsource-variable/noto-serif-devanagari": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
     "@keystatic/astro": "^5.2.0",
     "@keystatic/core": "^0.6.5",
     "@types/react": "^18.3.31",

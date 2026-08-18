@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { getAllTags, getPostsByTag, type Post, type Tag } from '../../lib/posts';
+
+export const prerender = true;
+
+/**
+ * Tags cut across sections deliberately: one tag page can hold an engineering
+ * note and a poem. That is the whole reason the sections share a single schema.
+ */
+export async function getStaticPaths() {
+  const tags = await getAllTags();
+  return Promise.all(
+    tags.map(async (tag) => ({
+      params: { tag: tag.slug },
+      props: { tag, posts: await getPostsByTag(tag.slug) },
+    })),
+  );
+}
+
+interface Props {
+  tag: Tag;
+  posts: Post[];
+}
+
+const { tag, posts } = Astro.props;
+
+const sectionsRepresented = [...new Set(posts.map((p) => p.section.label))];
+---
+
+<BaseLayout
+  title={`Tagged “${tag.name}”`}
+  description={`Everything on amitkyadav.com tagged ${tag.name}.`}
+>
+  <div class="register-literary">
+    <header class="article-measure border-b border-rule pb-7">
+      <p class="label label-accent mb-3">Tag</p>
+      <h1 class="font-serif text-[clamp(1.8rem,1.4rem+1.8vw,2.4rem)] font-semibold leading-tight">
+        {tag.name}
+      </h1>
+      <p class="meta mt-4">
+        {posts.length} {posts.length === 1 ? 'piece' : 'pieces'}
+        {sectionsRepresented.length > 1 && ` across ${sectionsRepresented.join(', ')}`}
+      </p>
+    </header>
+
+    <div class="article-measure mt-12 flex flex-col gap-7">
+      {posts.map((post) => <PostCard post={post} showSection />)}
+    </div>
+
+    <p class="article-measure mt-12 border-t border-rule pt-6">
+      <a href="/tags" class="label text-madder-ink no-underline">All tags →</a>
+    </p>
+  </div>
+</BaseLayout>
