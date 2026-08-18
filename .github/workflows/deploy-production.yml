@@ -21,6 +21,10 @@ jobs:
         run: npm ci
 
       - name: Build
+        env:
+          # Stated explicitly rather than relying on the default, so the two
+          # workflows can be read side by side and the difference is obvious.
+          SITE_URL: https://amitkyadav.com
         run: npm run build
 
       - name: Deploy to Hostinger (production)

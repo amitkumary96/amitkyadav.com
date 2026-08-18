@@ -21,6 +21,15 @@ jobs:
         run: npm ci
 
       - name: Build
+        env:
+          # Without this the staging build advertises production canonicals and
+          # omits noindex — and because the subdomain's document root sits inside
+          # public_html, the same pages also answer at amitkyadav.com/staging/,
+          # giving search engines two copies of the same writing.
+          SITE_URL: https://staging.amitkyadav.com
+          # Staging is the writing desk: show unfinished work here. Draft pages
+          # are noindex regardless and stay out of the sitemap and feed.
+          SHOW_DRAFTS: 'true'
         run: npm run build
 
       - name: Deploy to Hostinger (staging)
