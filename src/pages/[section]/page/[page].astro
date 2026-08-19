@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SectionHeader from '../../../components/SectionHeader.astro';
+import SectionListing from '../../../components/SectionListing.astro';
+import { SECTIONS, type Section } from '../../../config/site';
+import {
+  PAGE_SIZE,
+  getSectionItems,
+  getSectionPosts,
+  type SectionItem,
+} from '../../../lib/posts';
+
+export const prerender = true;
+
+/**
+ * Pages two onward. Page one is /<section>/ so the canonical URL of a section is
+ * not /<section>/page/1.
+ *
+ * Nested under /page/ rather than /<section>/<n> on purpose: the latter shares a
+ * namespace with post slugs, so a post called "2" would collide with page two.
+ * The rendering itself lives in SectionListing, shared with the index, so the two
+ * routes cannot drift apart.
+ */
+export async function getStaticPaths() {
+  const routes = await Promise.all(
+    SECTIONS.map(async (section) => {
+      const items = await getSectionItems(section.id);
+      const posts = await getSectionPosts(section.id);
+      const totalPages = Math.ceil(items.length / PAGE_SIZE);
+
+      // Only pages after the first; page one is the section index.
+      return Array.from({ length: Math.max(0, totalPages - 1) }, (_, index) => {
+        const page = index + 2;
+        return {
+          params: { section: section.id, page: String(page) },
+          props: {
+            section,
+            items: items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+            total: posts.length,
+            page,
+            totalPages,
+          },
+        };
+      });
+    }),
+  );
+
+  return routes.flat();
+}
+
+interface Props {
+  section: Section;
+  items: SectionItem[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+const { section, items, total, page, totalPages } = Astro.props;
+---
+
+<BaseLayout
+  title={`${section.label} — page ${page}`}
+  description={section.blurb}
+>
+  <div class:list={[`register-${section.register}`]}>
+    <SectionHeader section={section} total={total} page={page} />
+    <SectionListing
+      section={section}
+      items={items}
+      page={page}
+      totalPages={totalPages}
+    />
+  </div>
+</BaseLayout>

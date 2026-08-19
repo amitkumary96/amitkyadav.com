@@ -310,6 +310,20 @@ const isCurrent = (href: string) =>
       </div>
     </footer>
 
+    {
+      /* Analytics last, deferred, and production-only. Nothing is emitted at all
+         until SITE.goatcounter is set, so there is no dormant third-party script
+         and no consent banner to write. */
+      SITE.goatcounter && isProductionOrigin && (
+        <script
+          is:inline
+          data-goatcounter={`https://${SITE.goatcounter}.goatcounter.com/count`}
+          async
+          src="//gc.zgo.at/count.js"
+        />
+      )
+    }
+
     <script is:inline>
       (() => {
         const button = document.getElementById('menu-button');

@@ -1,0 +1,145 @@
+---
+/**
+ * Devanagari ↔ Roman, for readers who speak Hindi but do not read the script.
+ *
+ * The feature borrowed from Rekhta, which lets you read the same poem in more
+ * than one script. Rekhta stores each version by hand; this converts on demand,
+ * so it is labelled "auto" rather than presented as an authored romanisation.
+ *
+ * Conversion happens in the browser, on click, over the text nodes of the
+ * article. Doing it at build time would mean emitting every poem twice and
+ * teaching the markdown pipeline about scripts; doing it here costs nothing until
+ * someone actually presses the button, and the transliterator only downloads
+ * then.
+ */
+interface Props {
+  /** The element whose text should be converted. */
+  target: string;
+}
+
+const { target } = Astro.props;
+---
+
+<div class="script-toggle mt-8 flex flex-wrap items-center gap-3" data-script-toggle data-target={target}>
+  <span class="label">Read in</span>
+
+  <div class="inline-flex overflow-hidden rounded-sm border border-rule" role="group" aria-label="Script">
+    <button
+      type="button"
+      data-script="deva"
+      aria-pressed="true"
+      class="script-option px-3 py-1.5 font-deva text-sm text-ink transition-colors"
+      lang="hi"
+    >
+      देवनागरी
+    </button>
+    <button
+      type="button"
+      data-script="roman"
+      aria-pressed="false"
+      class="script-option border-l border-rule px-3 py-1.5 font-sans text-sm text-ink transition-colors"
+    >
+      Roman
+    </button>
+  </div>
+
+  <span class="meta" data-script-note hidden>Converted automatically — approximate</span>
+</div>
+
+<style>
+  .script-option[aria-pressed='true'] {
+    background-color: var(--madder);
+    color: var(--paper);
+  }
+
+  .script-option[aria-pressed='false']:hover {
+    background-color: var(--surface);
+  }
+
+  /* Without JavaScript there is nothing to switch to. */
+  :global(html.no-js) .script-toggle {
+    display: none;
+  }
+</style>
+
+<script>
+  import { devanagariToRoman } from '../lib/transliterate';
+
+  document.querySelectorAll<HTMLElement>('[data-script-toggle]').forEach((root) => {
+    const selector = root.dataset.target;
+    const article = selector ? document.querySelector<HTMLElement>(selector) : null;
+    const buttons = root.querySelectorAll<HTMLButtonElement>('[data-script]');
+    const note = root.querySelector<HTMLElement>('[data-script-note]');
+    if (!article || buttons.length === 0) return;
+
+    /**
+     * Collected once, before anything is altered, so switching back restores the
+     * exact original rather than a re-converted approximation.
+     */
+    const nodes: { node: Text; original: string; roman: string }[] = [];
+
+    const walker = document.createTreeWalker(article, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => {
+        // Leave code and preformatted blocks alone — transliterating an
+        // identifier would corrupt it.
+        const parent = (node as Text).parentElement;
+        if (!parent || parent.closest('code, pre, [data-script-toggle]')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return node.textContent && /[ऀ-ॿ]/.test(node.textContent)
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_REJECT;
+      },
+    });
+
+    let current = walker.nextNode();
+    while (current) {
+      const text = current as Text;
+      const original = text.textContent ?? '';
+      nodes.push({ node: text, original, roman: devanagariToRoman(original) });
+      current = walker.nextNode();
+    }
+
+    if (nodes.length === 0) {
+      root.hidden = true;
+      return;
+    }
+
+    const apply = (script: 'deva' | 'roman') => {
+      for (const entry of nodes) {
+        entry.node.textContent = script === 'roman' ? entry.roman : entry.original;
+      }
+
+      // The document language changes with the script, which is what tells a
+      // screen reader how to pronounce it and stops the Devanagari face being
+      // applied to Latin text.
+      article.setAttribute('lang', script === 'roman' ? 'hi-Latn' : 'hi');
+
+      for (const button of buttons) {
+        button.setAttribute('aria-pressed', String(button.dataset.script === script));
+      }
+
+      if (note) note.hidden = script !== 'roman';
+
+      try {
+        localStorage.setItem('script', script);
+      } catch {
+        // Private browsing can refuse storage; the toggle still works for this view.
+      }
+    };
+
+    for (const button of buttons) {
+      button.addEventListener('click', () => {
+        apply(button.dataset.script === 'roman' ? 'roman' : 'deva');
+      });
+    }
+
+    // Remember the choice across posts — someone who cannot read the script
+    // should not have to press this on every page.
+    try {
+      if (localStorage.getItem('script') === 'roman') apply('roman');
+    } catch {
+      // Ignore.
+    }
+  });
+</script>

@@ -17,6 +17,16 @@ export const SITE = {
     'Writing on engineering and AI, Hindi poetry, and stories — by Amit Kumar Yadav.',
   author: 'Amit Kumar Yadav',
   locale: 'en_IN',
+  /**
+   * Privacy-respecting analytics, off until a code is supplied.
+   *
+   * GoatCounter: free, no cookies, no personal data, so no consent banner is
+   * needed. Create a site at goatcounter.com and put its code here — the script
+   * is emitted only on the production origin, so staging traffic and local
+   * development never pollute the numbers.
+   */
+  goatcounter: '',
+
   social: {
     github: 'https://github.com/amitkumar-y',
     linkedin: 'https://linkedin.com/in/amit-kumar-y96/',

@@ -1,0 +1,44 @@
+---
+import type { Section } from '../config/site';
+
+interface Props {
+  section: Section;
+  total: number;
+  /** Shown from page two onward, so the heading is not ambiguous. */
+  page?: number;
+}
+
+const { section, total, page = 1 } = Astro.props;
+---
+
+<header class="article-measure border-b border-rule pb-7">
+  <div class="flex items-baseline gap-3">
+    <h1
+      class:list={[
+        'text-[clamp(1.9rem,1.4rem+2vw,2.6rem)] font-semibold leading-tight',
+        section.register === 'workshop'
+          ? 'font-sans tracking-tight'
+          : 'font-serif -tracking-[0.012em]',
+      ]}
+    >
+      {section.label}
+    </h1>
+    {
+      section.native && (
+        <span lang="hi" class="font-deva text-[1.25rem] text-ink-faint">
+          {section.native}
+        </span>
+      )
+    }
+  </div>
+
+  <p class="mt-3 max-w-[46ch] text-ink-soft">{section.blurb}</p>
+
+  <p class="meta mt-4">
+    {
+      total === 0
+        ? 'Nothing published yet'
+        : `${total} ${total === 1 ? 'piece' : 'pieces'}`
+    }{page > 1 && ` · page ${page}`}
+  </p>
+</header>

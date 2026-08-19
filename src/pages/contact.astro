@@ -5,14 +5,51 @@ import { SITE } from '../config/site';
 export const prerender = true;
 
 /**
- * The form still composes a mailto: link rather than posting anywhere, because
- * static hosting has no endpoint to post to. That works, but it asks the visitor
- * to finish the job in their own mail client, and a good share of people on
- * phones will abandon it. Replacing this with a real submit — a free form
- * service or a Cloudflare Function — is outstanding work.
+ * The form posts to /contact.php, a real endpoint served by Hostinger's PHP.
  *
- * Until then the page is honest about what pressing the button does.
+ * It used to compose a mailto: link and hand the visitor back their own half-
+ * finished email, which a good share of people on phones abandon. The endpoint
+ * validates, guards against header injection, and mails the message directly.
+ *
+ * No JavaScript is involved: native validation, a normal POST, and a redirect
+ * back here with a status. The mailto: address stays visible as a fallback for
+ * anyone who would rather use their own client — or if PHP is ever unavailable.
  */
+
+/** Statuses the endpoint can redirect back with. */
+const MESSAGES: Record<string, { tone: 'good' | 'bad'; text: string }> = {
+  sent: {
+    tone: 'good',
+    text: 'Thank you — your message is on its way. I usually reply within a couple of days.',
+  },
+  incomplete: {
+    tone: 'bad',
+    text: 'Your name, email and a message are all needed. Nothing was sent.',
+  },
+  email: {
+    tone: 'bad',
+    text: 'That email address did not look valid, so nothing was sent. Please check it.',
+  },
+  long: {
+    tone: 'bad',
+    text: 'That message is longer than the form accepts. Email me directly instead.',
+  },
+  timing: {
+    tone: 'bad',
+    text: 'The form was submitted too quickly, or the page had been open a long time. Please try again.',
+  },
+  failed: {
+    tone: 'bad',
+    text: 'The server could not send the message. Please email me directly.',
+  },
+  method: { tone: 'bad', text: 'That request was not a form submission.' },
+};
+
+const status = Astro.url.searchParams.get('status') ?? '';
+const notice = MESSAGES[status];
+
+const fieldClass =
+  'w-full rounded-sm border border-rule bg-paper px-3.5 py-2.5 font-sans text-[0.95rem] text-ink placeholder:text-ink-faint focus:border-madder focus:ring-0';
 ---
 
 <BaseLayout
@@ -32,13 +69,37 @@ export const prerender = true;
         </p>
       </header>
 
-      <form
-        id="contact-form"
-        class="mt-10 flex flex-col gap-6"
-        method="post"
-        enctype="text/plain"
-        action={`mailto:${SITE.social.email}`}
-      >
+      {
+        notice && (
+          <p
+            role="status"
+            class:list={[
+              'mt-8 rounded-sm border px-4 py-3 font-sans text-sm',
+              notice.tone === 'good'
+                ? 'border-rule-firm bg-surface text-ink'
+                : 'border-madder bg-madder-wash text-madder-ink',
+            ]}
+          >
+            {notice.text}
+          </p>
+        )
+      }
+
+      <form method="post" action="/contact.php" class="mt-8 flex flex-col gap-6">
+        {/* Stamped by the inline script below, not at build time. A build-time
+            value would be identical for every visitor, would make the output
+            non-deterministic, and would expire the form 24 hours after a deploy.
+            Left empty when JavaScript is off, and the endpoint then skips the
+            timing check rather than rejecting a real person. */}
+        <input type="hidden" name="started" value="" data-started />
+
+        {/* Hidden from people, tempting to naive bots. Not display:none, which
+            some bots detect — off-screen with aria-hidden instead. */}
+        <div class="absolute left-[-9999px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+          <label for="website">Website</label>
+          <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+        </div>
+
         <div class="flex flex-col gap-2">
           <label for="name" class="label">Your name</label>
           <input
@@ -47,7 +108,7 @@ export const prerender = true;
             name="name"
             required
             autocomplete="name"
-            class="w-full rounded-sm border border-rule bg-paper px-3.5 py-2.5 font-sans text-[0.95rem] text-ink placeholder:text-ink-faint focus:border-madder focus:ring-0"
+            class={fieldClass}
             placeholder="Amit"
           />
         </div>
@@ -60,18 +121,21 @@ export const prerender = true;
             name="email"
             required
             autocomplete="email"
-            class="w-full rounded-sm border border-rule bg-paper px-3.5 py-2.5 font-sans text-[0.95rem] text-ink placeholder:text-ink-faint focus:border-madder focus:ring-0"
+            class={fieldClass}
             placeholder="you@example.com"
           />
         </div>
 
         <div class="flex flex-col gap-2">
-          <label for="subject" class="label">Subject <span class="normal-case tracking-normal text-ink-faint">(optional)</span></label>
+          <label for="subject" class="label">
+            Subject
+            <span class="normal-case tracking-normal text-ink-faint">(optional)</span>
+          </label>
           <input
             type="text"
             id="subject"
             name="subject"
-            class="w-full rounded-sm border border-rule bg-paper px-3.5 py-2.5 font-sans text-[0.95rem] text-ink placeholder:text-ink-faint focus:border-madder focus:ring-0"
+            class={fieldClass}
             placeholder="What's this about?"
           />
         </div>
@@ -83,7 +147,8 @@ export const prerender = true;
             name="message"
             rows="7"
             required
-            class="w-full resize-y rounded-sm border border-rule bg-paper px-3.5 py-2.5 font-sans text-[0.95rem] text-ink placeholder:text-ink-faint focus:border-madder focus:ring-0"
+            maxlength="5000"
+            class={`${fieldClass} resize-y`}
             placeholder="Say as much or as little as you like."></textarea>
         </div>
 
@@ -92,102 +157,50 @@ export const prerender = true;
             type="submit"
             class="self-start rounded-sm bg-madder px-5 py-2.5 font-sans text-sm font-semibold text-paper transition-transform duration-200 hover:scale-[1.02] active:scale-[0.99]"
           >
-            Open in my mail app
+            Send message
           </button>
           <p class="meta">
-            This opens your own email app with the message filled in — you press
-            send there. Prefer to skip it? Write to{' '}
+            Goes straight to my inbox. Prefer your own mail app? Write to{' '}
             <a href={`mailto:${SITE.social.email}`}>{SITE.social.email}</a>.
           </p>
         </div>
-
-        <p
-          id="form-error"
-          class="hidden rounded-sm border border-madder bg-madder-wash px-4 py-3 font-sans text-sm text-madder-ink"
-          role="alert"
-        >
-        </p>
       </form>
+
+      <script is:inline>
+        // Records when this page was opened, so the endpoint can tell a person
+        // filling in a form from a script posting instantly.
+        (() => {
+          const field = document.querySelector('[data-started]');
+          if (field) field.value = String(Math.floor(Date.now() / 1000));
+        })();
+      </script>
 
       <section class="mt-14 border-t border-rule pt-8">
         <h2 class="label mb-5">Elsewhere</h2>
         <ul class="flex flex-col gap-3">
-          <li>
-            <a
-              href={SITE.social.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="group flex items-baseline justify-between gap-4 no-underline"
-            >
-              <span class="font-sans text-[0.97rem] text-ink transition-colors group-hover:text-madder-ink"
-                >LinkedIn</span
-              >
-              <span class="meta">Professional things</span>
-            </a>
-          </li>
-          <li>
-            <a
-              href={SITE.social.github}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="group flex items-baseline justify-between gap-4 no-underline"
-            >
-              <span class="font-sans text-[0.97rem] text-ink transition-colors group-hover:text-madder-ink"
-                >GitHub</span
-              >
-              <span class="meta">Code, including this site</span>
-            </a>
-          </li>
-          <li>
-            <a
-              href={SITE.social.twitter}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="group flex items-baseline justify-between gap-4 no-underline"
-            >
-              <span class="font-sans text-[0.97rem] text-ink transition-colors group-hover:text-madder-ink"
-                >Twitter</span
-              >
-              <span class="meta">Shorter thoughts</span>
-            </a>
-          </li>
+          {
+            [
+              { href: SITE.social.linkedin, label: 'LinkedIn', note: 'Professional things' },
+              { href: SITE.social.github, label: 'GitHub', note: 'Code, including this site' },
+              { href: SITE.social.twitter, label: 'Twitter', note: 'Shorter thoughts' },
+            ].map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="group flex items-baseline justify-between gap-4 no-underline"
+                >
+                  <span class="font-sans text-[0.97rem] text-ink transition-colors group-hover:text-madder-ink">
+                    {link.label}
+                  </span>
+                  <span class="meta">{link.note}</span>
+                </a>
+              </li>
+            ))
+          }
         </ul>
       </section>
     </div>
   </div>
 </BaseLayout>
-
-<script is:inline define:vars={{ recipient: SITE.social.email }}>
-  (() => {
-    const form = document.getElementById('contact-form');
-    const error = document.getElementById('form-error');
-    if (!form || !error) return;
-
-    const show = (message) => {
-      error.textContent = message;
-      error.classList.remove('hidden');
-    };
-
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      error.classList.add('hidden');
-
-      const data = new FormData(form);
-      const name = String(data.get('name') ?? '').trim();
-      const email = String(data.get('email') ?? '').trim();
-      const message = String(data.get('message') ?? '').trim();
-      const subject =
-        String(data.get('subject') ?? '').trim() || 'Message from amitkyadav.com';
-
-      if (!name || !email || !message) {
-        show('Please fill in your name, your email and a message.');
-        return;
-      }
-
-      const body = `Name: ${name}\nEmail: ${email}\n\n${message}`;
-      window.location.href = `mailto:${recipient}?subject=${encodeURIComponent(
-        subject,
-      )}&body=${encodeURIComponent(body)}`;
-    });
-  })();
-</script>

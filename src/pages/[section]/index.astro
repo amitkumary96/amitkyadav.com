@@ -1,160 +1,56 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import PostCard from '../../components/PostCard.astro';
+import SectionHeader from '../../components/SectionHeader.astro';
+import SectionListing from '../../components/SectionListing.astro';
 import { SECTIONS, type Section } from '../../config/site';
 import {
-  formatDateShort,
-  getAllSeries,
+  PAGE_SIZE,
+  getSectionItems,
   getSectionPosts,
-  isoDate,
-  type Post,
-  type Series,
+  type SectionItem,
 } from '../../lib/posts';
 
 export const prerender = true;
 
 /**
- * One template for every section. This replaced six near-identical page files —
- * three listings and three post pages — each of which re-implemented the same
- * glob and filename parsing.
+ * Page one of a section. Pages two onward live at /<section>/page/<n>, which
+ * keeps them from colliding with post slugs under /<section>/<slug>.
+ *
+ * One template for every section — this replaced three near-identical listing
+ * files that each re-implemented the same glob and filename parsing.
  */
 export async function getStaticPaths() {
-  const allSeries = await getAllSeries();
-
   return Promise.all(
-    SECTIONS.map(async (section) => ({
-      params: { section: section.id },
-      props: {
-        section,
-        posts: await getSectionPosts(section.id),
-        series: allSeries.filter((s) => s.section.id === section.id),
-      },
-    })),
+    SECTIONS.map(async (section) => {
+      const items = await getSectionItems(section.id);
+      const posts = await getSectionPosts(section.id);
+
+      return {
+        params: { section: section.id },
+        props: {
+          section,
+          items: items.slice(0, PAGE_SIZE),
+          total: posts.length,
+          totalPages: Math.max(1, Math.ceil(items.length / PAGE_SIZE)),
+        },
+      };
+    }),
   );
 }
 
 interface Props {
   section: Section;
-  posts: Post[];
-  series: Series[];
+  items: SectionItem[];
+  total: number;
+  totalPages: number;
 }
 
-const { section, posts, series } = Astro.props;
-
-/**
- * Series and standalone posts share one date-sorted stream.
- *
- * They used to be separate blocks with the series list pinned above, sorted by
- * name — so a series that had not been touched in a year still sat above this
- * week's writing. A series is dated by its most recent part, which is when it
- * last had news.
- *
- * A part belongs to its series entry rather than the flat list: a twenty-chapter
- * story would otherwise bury everything else in the section.
- */
-type Item =
-  | { kind: 'post'; date: Date; post: Post }
-  | { kind: 'series'; date: Date; series: Series };
-
-const seriesPartUrls = new Set(series.flatMap((s) => s.parts.map((p) => p.url)));
-
-const items: Item[] = [
-  ...posts
-    .filter((post) => !seriesPartUrls.has(post.url))
-    .map((post): Item => ({ kind: 'post', date: post.date, post })),
-  ...series.map((s): Item => {
-    const latest = s.parts.reduce((a, b) => (a.date > b.date ? a : b));
-    return { kind: 'series', date: latest.date, series: s };
-  }),
-].sort((a, b) => b.date.getTime() - a.date.getTime());
+const { section, items, total, totalPages } = Astro.props;
 ---
 
 <BaseLayout title={section.label} description={section.blurb}>
   <div class:list={[`register-${section.register}`]}>
-    <header class="article-measure border-b border-rule pb-7">
-      <div class="flex items-baseline gap-3">
-        <h1
-          class:list={[
-            'text-[clamp(1.9rem,1.4rem+2vw,2.6rem)] font-semibold leading-tight',
-            section.register === 'workshop'
-              ? 'font-sans tracking-tight'
-              : 'font-serif -tracking-[0.012em]',
-          ]}
-        >
-          {section.label}
-        </h1>
-        {
-          section.native && (
-            <span lang="hi" class="font-deva text-[1.25rem] text-ink-faint">
-              {section.native}
-            </span>
-          )
-        }
-      </div>
-      <p class="mt-3 max-w-[46ch] text-ink-soft">{section.blurb}</p>
-      <p class="meta mt-4">
-        {posts.length === 0
-          ? 'Nothing published yet'
-          : `${posts.length} ${posts.length === 1 ? 'piece' : 'pieces'}`}
-      </p>
-    </header>
-
-    <section class="article-measure mt-12">
-      {
-        items.length > 0 ? (
-          <div class="flex flex-col gap-7">
-            {items.map((item) =>
-              item.kind === 'post' ? (
-                <PostCard post={item.post} />
-              ) : (
-                <article class="group border-b border-rule pb-7 last:border-0">
-                  <a href={`/series/${item.series.slug}`} class="block no-underline">
-                    <div class="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span class="label label-accent">In parts</span>
-                      <time class="meta" datetime={isoDate(item.date)}>
-                        {formatDateShort(item.date)}
-                      </time>
-                    </div>
-
-                    <h2
-                      class:list={[
-                        'text-[1.4rem] leading-snug transition-colors group-hover:text-madder-ink',
-                        section.register === 'workshop'
-                          ? 'font-sans font-semibold tracking-tight'
-                          : 'font-serif font-semibold',
-                      ]}
-                    >
-                      {item.series.name}
-                    </h2>
-
-                    <ol class="mt-3 flex flex-col gap-1">
-                      {item.series.parts.slice(0, 3).map((part) => (
-                        <li lang={part.lang} class="text-[0.97rem] text-ink-soft">
-                          {part.series?.order}. {part.title}
-                        </li>
-                      ))}
-                      {item.series.parts.length > 3 && (
-                        <li class="meta">
-                          and {item.series.parts.length - 3} more
-                        </li>
-                      )}
-                    </ol>
-
-                    <span class="meta mt-3 block">
-                      {item.series.parts.length}{' '}
-                      {item.series.parts.length === 1 ? 'part' : 'parts'}
-                    </span>
-                  </a>
-                </article>
-              ),
-            )}
-          </div>
-        ) : (
-          <p class="rounded-sm border border-dashed border-rule px-5 py-8 text-center text-ink-soft">
-            {section.emptyState}
-          </p>
-        )
-      }
-    </section>
+    <SectionHeader section={section} total={total} />
+    <SectionListing section={section} items={items} page={1} totalPages={totalPages} />
   </div>
 </BaseLayout>

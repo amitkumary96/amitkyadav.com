@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import BaseLayout from './BaseLayout.astro';
 import Recitation from '../components/Recitation.astro';
+import ScriptToggle from '../components/ScriptToggle.astro';
 import PostFooterNav from '../components/PostFooterNav.astro';
 import SeriesNav from '../components/SeriesNav.astro';
 import {
@@ -112,6 +113,7 @@ const isVerse = format === 'verse';
       }
 
       <div
+        id="post-body"
         lang={lang}
         class:list={[
           'mt-9',
@@ -120,6 +122,9 @@ const isVerse = format === 'verse';
       >
         <slot />
       </div>
+
+      {/* Offered only where there is Devanagari to convert. */}
+      {lang === 'hi' && <ScriptToggle target="#post-body" />}
 
       {post.audio && <Recitation src={post.audio} label={post.audioLabel} />}
 

@@ -10,7 +10,7 @@ Astro + Tailwind, content as Markdown in the repo, deployed as a static site.
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm run build      # static output in dist/, plus sitemap and feed
+npm run build      # static output in dist/, then the Pagefind search index
 npm run preview    # serve the built output
 ```
 
@@ -88,6 +88,55 @@ the nested series under `src/content/story/fixture-series/`,
 `src/content/engineer/component-reference.mdx`, and
 `src/content/poet/recitation-check.md`. They are invisible in production. Delete
 them once real writing covers the same ground.
+
+## Features
+
+| | Where | Notes |
+| --- | --- | --- |
+| Search | `/search` | Pagefind, indexed at build, runs in the browser. No server, no service. Index loads on first keystroke. |
+| Archive | `/archive` | Everything by year, dense on purpose. |
+| Tags | `/tags` | Cut across all four sections. |
+| Pagination | `/<section>/page/2` | Kicks in past 12 entries per section (`PAGE_SIZE` in `src/lib/posts.ts`). |
+| Earlier / later | foot of a post | Within its section. Series parts use the series navigation instead. |
+| Related | foot of a post | By shared tags, deliberately across sections. |
+| Script toggle | Devanagari posts | Devanagari ↔ Roman, converted in the browser on demand. |
+| Recitation | poems with `audio` | Custom player, `preload="none"`, native fallback without JavaScript. |
+| Preview images | every post | 1200×630 PNG generated at build by satori + resvg. |
+| Feed | `/rss.xml` | Real titles, dates, categories, per-item language. Drafts always excluded. |
+| Sitemap | `/sitemap-index.xml` | Production only — staging is `noindex`. |
+
+### The script toggle
+
+Devanagari posts get a Devanagari/Roman switch. The transliterator in
+`src/lib/transliterate.ts` is written for Hindi rather than Sanskrit: it deletes
+the word-final inherent vowel (`मन` → `man`, not `mana`) and follows Hinglish
+conventions for nasals and vowel length (`नहीं` → `nahin`, `संभव` → `sambhav`,
+`में` → `mein`). A Sanskrit library would give `nahīṃ`.
+
+It is approximate and labelled so in the interface. Medial schwa deletion depends
+on morphology no rule set settles, so `मिलता` comes out `milata` rather than
+`milta`. It is a reading aid for people who speak Hindi but do not read the
+script — where the romanisation matters, write it by hand.
+
+The transliterator only downloads when the button is pressed, and the choice is
+remembered across posts.
+
+### Contact form
+
+Posts to `public/contact.php`, a real endpoint served by Hostinger's PHP. It
+validates, strips anything that could inject a mail header, uses a honeypot and a
+submission-timing check, and redirects back with a status. No JavaScript is
+required, and no third-party form service is involved.
+
+**This is the only server-dependent file in the project.** On a purely static host
+it would 404 and the form would need a different endpoint.
+
+### Analytics
+
+Off by default. Set `goatcounter` in `src/config/site.ts` to a GoatCounter site
+code and the script is emitted — production origin only, so staging and local
+development never pollute the numbers. No cookies, no personal data, so no consent
+banner.
 
 ## Editing
 

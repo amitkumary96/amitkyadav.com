@@ -333,6 +333,48 @@ export async function getPostsByTag(tagSlug: string): Promise<Post[]> {
   return posts.filter((post) => post.tags.some((tag) => slugify(tag) === tagSlug));
 }
 
+export type SectionItem =
+  | { readonly kind: 'post'; readonly date: Date; readonly post: Post }
+  | { readonly kind: 'series'; readonly date: Date; readonly series: Series };
+
+/** How many entries a section page shows before paginating. */
+export const PAGE_SIZE = 12;
+
+/**
+ * A section's listing: standalone posts and series entries in one date-sorted
+ * stream.
+ *
+ * Series and posts used to be separate blocks with the series list pinned above
+ * and sorted by name, so a series untouched for a year still outranked this
+ * week's writing. A series is dated by its most recent part, which is when it
+ * last had news. Individual parts stay out of the flat list — a twenty-chapter
+ * story would otherwise bury everything else.
+ *
+ * Lives here rather than in the page so the index and the paginated routes
+ * cannot drift apart.
+ */
+export async function getSectionItems(sectionId: SectionId): Promise<SectionItem[]> {
+  const [posts, allSeries] = await Promise.all([
+    getSectionPosts(sectionId),
+    getAllSeries(),
+  ]);
+
+  const series = allSeries.filter((s) => s.section.id === sectionId);
+  const partUrls = new Set(series.flatMap((s) => s.parts.map((p) => p.url)));
+
+  const items: SectionItem[] = [
+    ...posts
+      .filter((post) => !partUrls.has(post.url))
+      .map((post): SectionItem => ({ kind: 'post', date: post.date, post })),
+    ...series.map((s): SectionItem => {
+      const latest = s.parts.reduce((a, b) => (a.date > b.date ? a : b));
+      return { kind: 'series', date: latest.date, series: s };
+    }),
+  ];
+
+  return items.sort((a, b) => b.date.getTime() - a.date.getTime());
+}
+
 export interface Adjacent {
   readonly previous?: Post;
   readonly next?: Post;
