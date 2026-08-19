@@ -21,6 +21,7 @@ const isVerse = format === 'verse';
   title={post.title}
   description={post.excerpt ?? `${post.title} — ${section.label} by Amit Kumar Yadav`}
   ogType="article"
+  image={`/og/${section.id}/${post.slug}.png`}
   lang={lang === 'hi' ? 'hi' : lang === 'hi-Latn' ? 'hi-Latn' : 'en'}
   noindex={post.draft}
 >

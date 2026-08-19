@@ -2,6 +2,7 @@ import { rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
+import sitemap from '@astrojs/sitemap';
 
 const PRODUCTION_ORIGIN = 'https://amitkyadav.com';
 
@@ -45,6 +46,27 @@ const isProduction = process.env.NODE_ENV === 'production';
  * be dead weight.
  */
 const integrations = [mdx(), excludeAdminFromProduction(site)];
+
+/**
+ * The sitemap is generated only for the production origin.
+ *
+ * Staging marks every page noindex, so publishing a sitemap of it would be
+ * inviting crawlers to the copy we are trying to keep out of search. Skipping
+ * the integration entirely is clearer than emitting a file and filtering all of
+ * it away.
+ */
+if (site === PRODUCTION_ORIGIN) {
+  integrations.push(
+    sitemap({
+      // /admin never reaches production, and the 404 is not a destination.
+      filter: (page) => !page.includes('/admin'),
+      changefreq: 'weekly',
+      // No lastmod: it would be new Date() on every run, which would make the
+      // build non-deterministic and send the FTP sync re-uploading a file whose
+      // meaning had not changed. Crawlers largely ignore it anyway.
+    }),
+  );
+}
 
 if (!isProduction) {
   const [{ default: react }, { default: keystatic }] = await Promise.all([

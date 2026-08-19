@@ -1,15 +1,15 @@
 # robots.txt for amitkyadav.com
+#
+# Staging is excluded by a noindex meta tag on every page rather than here,
+# because this file is served from both origins and cannot tell them apart.
 
 User-agent: *
 Allow: /
 
-# Sitemaps
-Sitemap: https://amitkyadav.com/sitemap.xml
-
-# Disallow admin pages
+# The editor. Never deployed to production, but listed so a crawler that finds
+# it on any origin leaves it alone.
 Disallow: /admin/
 
-# Allow all crawlers to access content
-Allow: /poet/
-Allow: /engineer/
-Allow: /life/
+# @astrojs/sitemap emits an index plus numbered children, not a single
+# sitemap.xml. Pointing at the old filename would have advertised a 404.
+Sitemap: https://amitkyadav.com/sitemap-index.xml
