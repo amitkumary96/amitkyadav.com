@@ -333,6 +333,75 @@ export async function getPostsByTag(tagSlug: string): Promise<Post[]> {
   return posts.filter((post) => post.tags.some((tag) => slugify(tag) === tagSlug));
 }
 
+export interface Adjacent {
+  readonly previous?: Post;
+  readonly next?: Post;
+}
+
+/**
+ * The posts either side of this one within its own section, by date.
+ *
+ * Series parts are excluded: a chapter's neighbours are its sibling chapters,
+ * which SeriesNav already provides, and mixing the two orders reads as a
+ * navigation bug rather than a feature.
+ */
+export async function getAdjacentPosts(post: Post): Promise<Adjacent> {
+  if (post.series) return {};
+
+  const siblings = (await getSectionPosts(post.section.id)).filter((p) => !p.series);
+  const index = siblings.findIndex((p) => p.url === post.url);
+  if (index === -1) return {};
+
+  // Sorted newest first, so the later post is the one before it in the array.
+  return { next: siblings[index - 1], previous: siblings[index + 1] };
+}
+
+/**
+ * Other posts sharing tags with this one, most overlap first, across every
+ * section — which is the payoff for the sections sharing one schema.
+ */
+export async function getRelatedPosts(post: Post, limit = 3): Promise<Post[]> {
+  if (post.tags.length === 0) return [];
+
+  const own = new Set(post.tags.map((tag) => slugify(tag)));
+
+  return (await getAllPosts())
+    .filter((candidate) => candidate.url !== post.url)
+    .map((candidate) => ({
+      candidate,
+      shared: candidate.tags.filter((tag) => own.has(slugify(tag))).length,
+    }))
+    .filter((entry) => entry.shared > 0)
+    .sort(
+      (a, b) =>
+        b.shared - a.shared || b.candidate.date.getTime() - a.candidate.date.getTime(),
+    )
+    .slice(0, limit)
+    .map((entry) => entry.candidate);
+}
+
+export interface YearGroup {
+  readonly year: number;
+  readonly posts: readonly Post[];
+}
+
+/** Every post grouped by year, newest year first. Used by the archive. */
+export async function getPostsByYear(): Promise<YearGroup[]> {
+  const posts = await getAllPosts();
+  const grouped = new Map<number, Post[]>();
+
+  for (const post of posts) {
+    const year = post.date.getUTCFullYear();
+    const bucket = grouped.get(year);
+    if (bucket) bucket.push(post);
+    else grouped.set(year, [post]);
+  }
+
+  return [...grouped.entries()]
+    .sort((a, b) => b[0] - a[0])
+    .map(([year, group]) => ({ year, posts: group }));
+}
+
 /** e.g. "19 August 2026". Fixed locale so the output does not vary by builder. */
 export function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('en-GB', {

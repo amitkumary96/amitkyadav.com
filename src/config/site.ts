@@ -145,3 +145,15 @@ export const NAV: readonly NavItem[] = [
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
 ] as const;
+
+/**
+ * Ways of finding something rather than places to go, so they live in the footer
+ * and — for search — as an icon in the header. Adding them to the main nav took
+ * it to eight items, which stops being navigation and becomes a list.
+ */
+export const UTILITY_NAV: readonly NavItem[] = [
+  { href: '/archive', label: 'Archive' },
+  { href: '/tags', label: 'Tags' },
+  { href: '/search', label: 'Search' },
+  { href: '/rss.xml', label: 'RSS' },
+] as const;

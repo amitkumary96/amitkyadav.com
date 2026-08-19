@@ -1,0 +1,188 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+export const prerender = true;
+
+/**
+ * Search, entirely in the browser.
+ *
+ * Pagefind indexes the built output after `astro build` and ships a small binary
+ * index that is fetched in fragments as you type — so this works on static
+ * hosting with no server, no third-party service and no API key. Only the
+ * article body of each post is indexed; the navigation and footer carry
+ * `data-pagefind-body` nowhere near them, so results are not all identical.
+ *
+ * A deliberately small custom interface rather than Pagefind's default UI: the
+ * default ships its own stylesheet, which would fight the palette for no gain
+ * at this size.
+ */
+---
+
+<BaseLayout
+  title="Search"
+  description="Search everything on amitkyadav.com — engineering notes, poetry, stories and life."
+>
+  <div class="register-literary">
+    <div class="article-measure">
+      <header class="border-b border-rule pb-7">
+        <h1
+          class="font-serif text-[clamp(1.8rem,1.4rem+1.8vw,2.4rem)] font-semibold leading-tight"
+        >
+          Search
+        </h1>
+        <p class="mt-3 text-ink-soft">
+          Across all four sections. Devanagari and Latin both work.
+        </p>
+      </header>
+
+      <form class="mt-8" role="search" onsubmit="return false;">
+        <label for="q" class="label mb-2 block">What are you looking for?</label>
+        <input
+          type="search"
+          id="q"
+          name="q"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          placeholder="testing, कविता, automation…"
+          class="w-full rounded-sm border border-rule bg-paper px-3.5 py-3 font-sans text-[1rem] text-ink placeholder:text-ink-faint focus:border-madder focus:ring-0"
+        />
+      </form>
+
+      <p id="search-status" class="meta mt-4" role="status" aria-live="polite"></p>
+
+      <div id="search-results" class="mt-6 flex flex-col gap-7"></div>
+
+      <noscript>
+        <p class="mt-6 rounded-sm border border-dashed border-rule px-5 py-6 text-ink-soft">
+          Search needs JavaScript. Everything is also reachable by section from the
+          navigation, or by <a href="/tags">tag</a>.
+        </p>
+      </noscript>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  interface PagefindSubResult {
+    excerpt: string;
+    url: string;
+  }
+
+  interface PagefindResultData {
+    url: string;
+    excerpt: string;
+    meta: Record<string, string> & { title?: string };
+    sub_results?: PagefindSubResult[];
+  }
+
+  interface PagefindResult {
+    id: string;
+    data: () => Promise<PagefindResultData>;
+  }
+
+  interface Pagefind {
+    debouncedSearch: (
+      term: string,
+      options?: unknown,
+      debounceMs?: number,
+    ) => Promise<{ results: PagefindResult[] } | null>;
+  }
+
+  const input = document.querySelector<HTMLInputElement>('#q');
+  const status = document.querySelector<HTMLElement>('#search-status');
+  const output = document.querySelector<HTMLElement>('#search-results');
+
+  if (input && status && output) {
+    let pagefind: Pagefind | undefined;
+    let loadFailed = false;
+
+    /**
+     * Loaded on first keystroke rather than on page load, so arriving at this
+     * page costs nothing until someone actually searches. The path is built at
+     * runtime because the index only exists in the built output — a static
+     * import would fail the dev server and the build.
+     */
+    const load = async (): Promise<Pagefind | undefined> => {
+      if (pagefind || loadFailed) return pagefind;
+      try {
+        pagefind = (await import(
+          /* @vite-ignore */ `${import.meta.env.BASE_URL}pagefind/pagefind.js`.replace(
+            '//',
+            '/',
+          )
+        )) as unknown as Pagefind;
+        return pagefind;
+      } catch {
+        loadFailed = true;
+        status.textContent =
+          'Search index unavailable. It is generated at build time, so this will not work on the dev server.';
+        return undefined;
+      }
+    };
+
+    const escape = (value: string) =>
+      value.replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
+      );
+
+    const render = (items: PagefindResultData[]) => {
+      output.innerHTML = items
+        .map((item) => {
+          const section = item.meta.section ? escape(item.meta.section) : '';
+          return `
+            <article class="group border-b border-rule pb-7 last:border-0">
+              <a href="${escape(item.url)}" class="block no-underline">
+                ${section ? `<span class="label label-accent">${section}</span>` : ''}
+                <h2 class="mt-2 font-serif text-[1.3rem] font-semibold leading-snug text-ink transition-colors group-hover:text-madder-ink">
+                  ${escape(item.meta.title ?? item.url)}
+                </h2>
+                <p class="mt-2 text-ink-soft">${item.excerpt}</p>
+              </a>
+            </article>`;
+        })
+        .join('');
+    };
+
+    const run = async () => {
+      const term = input.value.trim();
+
+      if (term.length < 2) {
+        output.innerHTML = '';
+        status.textContent = term.length === 1 ? 'Keep typing…' : '';
+        return;
+      }
+
+      const api = await load();
+      if (!api) return;
+
+      status.textContent = 'Searching…';
+      const search = await api.debouncedSearch(term, undefined, 200);
+
+      // null means a newer keystroke superseded this search.
+      if (search === null) return;
+
+      if (search.results.length === 0) {
+        output.innerHTML = '';
+        status.textContent = `Nothing found for “${term}”.`;
+        return;
+      }
+
+      // Excerpt fetching is per-result, so cap what is resolved at once.
+      const items = await Promise.all(search.results.slice(0, 20).map((r) => r.data()));
+      status.textContent = `${search.results.length} ${
+        search.results.length === 1 ? 'result' : 'results'
+      }`;
+      render(items);
+    };
+
+    input.addEventListener('input', run);
+
+    // Allow /search?q=term to arrive pre-filled, so results are linkable.
+    const initial = new URLSearchParams(location.search).get('q');
+    if (initial) {
+      input.value = initial;
+      void run();
+    }
+  }
+</script>

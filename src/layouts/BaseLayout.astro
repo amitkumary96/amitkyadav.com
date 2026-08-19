@@ -17,7 +17,7 @@ import literataLatin from '@fontsource-variable/literata/files/literata-latin-wg
 import devanagari from '@fontsource-variable/noto-serif-devanagari/files/noto-serif-devanagari-devanagari-wght-normal.woff2?url';
 
 import DarkModeToggle from '../components/DarkModeToggle.astro';
-import { NAV, SITE } from '../config/site';
+import { NAV, SITE, UTILITY_NAV } from '../config/site';
 
 interface Props {
   title?: string;
@@ -189,6 +189,24 @@ const isCurrent = (href: string) =>
         </nav>
 
         <div class="flex items-center gap-2">
+          <a
+            href="/search"
+            aria-label="Search"
+            class="grid h-9 w-9 place-items-center rounded-sm border border-rule text-ink-soft transition-colors hover:border-rule-firm hover:text-ink"
+          >
+            <svg
+              class="h-[1.05rem] w-[1.05rem]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="M15.5 15.5 21 21" />
+            </svg>
+          </a>
           <DarkModeToggle />
           <button
             id="menu-button"
@@ -250,9 +268,15 @@ const isCurrent = (href: string) =>
         </p>
 
         <ul class="flex flex-wrap items-center gap-x-5 gap-y-2">
-          <li>
-            <a href="/rss.xml" class="meta no-underline hover:text-ink">RSS</a>
-          </li>
+          {
+            UTILITY_NAV.map((item) => (
+              <li>
+                <a href={item.href} class="meta no-underline hover:text-ink">
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
           <li>
             <a
               href={SITE.social.github}

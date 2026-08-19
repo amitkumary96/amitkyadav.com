@@ -2,15 +2,25 @@
 import { Image } from 'astro:assets';
 import BaseLayout from './BaseLayout.astro';
 import Recitation from '../components/Recitation.astro';
+import PostFooterNav from '../components/PostFooterNav.astro';
 import SeriesNav from '../components/SeriesNav.astro';
-import { formatDate, isoDate, slugify, type Post, type SeriesPosition } from '../lib/posts';
+import {
+  formatDate,
+  isoDate,
+  slugify,
+  type Adjacent,
+  type Post,
+  type SeriesPosition,
+} from '../lib/posts';
 
 interface Props {
   post: Post;
   seriesPosition?: SeriesPosition;
+  adjacent?: Adjacent;
+  related?: Post[];
 }
 
-const { post, seriesPosition } = Astro.props;
+const { post, seriesPosition, adjacent = {}, related = [] } = Astro.props;
 const { section, format, lang } = post;
 const { cover, coverAlt } = post.entry.data;
 
@@ -26,7 +36,12 @@ const isVerse = format === 'verse';
   noindex={post.draft}
 >
   <div class:list={[`register-${section.register}`]}>
-    <article class="article-measure mx-auto">
+    <article
+      class="article-measure mx-auto"
+      data-pagefind-body
+      data-pagefind-filter={`section:${section.label}`}
+      data-pagefind-meta={`section:${section.label}`}
+    >
       <a
         href={`/${section.id}`}
         class="label label-accent inline-block no-underline hover:text-madder-ink"
@@ -126,6 +141,8 @@ const isVerse = format === 'verse';
       }
 
       {seriesPosition && <SeriesNav position={seriesPosition} />}
+
+      <PostFooterNav adjacent={adjacent} related={related} register={section.register} />
     </article>
   </div>
 </BaseLayout>

@@ -1,0 +1,101 @@
+---
+import { formatDateShort, type Adjacent, type Post } from '../lib/posts';
+
+interface Props {
+  adjacent: Adjacent;
+  related: Post[];
+  register: 'workshop' | 'literary';
+}
+
+const { adjacent, related, register } = Astro.props;
+const titleFont = register === 'workshop' ? 'font-sans font-semibold' : 'font-serif';
+const hasAdjacent = Boolean(adjacent.previous || adjacent.next);
+---
+
+{
+  hasAdjacent && (
+    <nav class="mt-14 border-t border-rule-firm pt-6" aria-label="Neighbouring posts">
+      <div class="grid gap-4 sm:grid-cols-2">
+        {adjacent.previous ? (
+          <a
+            href={adjacent.previous.url}
+            rel="prev"
+            class="group block rounded-sm border border-rule p-4 no-underline transition-colors hover:border-rule-firm"
+          >
+            <span class="label">← Earlier</span>
+            <span
+              lang={adjacent.previous.lang}
+              class:list={['mt-1.5 block text-ink transition-colors group-hover:text-madder-ink', titleFont]}
+            >
+              {adjacent.previous.title}
+            </span>
+            <span class="meta mt-1 block">{formatDateShort(adjacent.previous.date)}</span>
+          </a>
+        ) : (
+          <div class="rounded-sm border border-dashed border-rule p-4" aria-hidden="true">
+            <span class="label">Earliest</span>
+            <span class="mt-1.5 block text-ink-faint">Nothing before this one</span>
+          </div>
+        )}
+
+        {adjacent.next ? (
+          <a
+            href={adjacent.next.url}
+            rel="next"
+            class="group block rounded-sm border border-rule p-4 text-right no-underline transition-colors hover:border-rule-firm"
+          >
+            <span class="label">Later →</span>
+            <span
+              lang={adjacent.next.lang}
+              class:list={['mt-1.5 block text-ink transition-colors group-hover:text-madder-ink', titleFont]}
+            >
+              {adjacent.next.title}
+            </span>
+            <span class="meta mt-1 block">{formatDateShort(adjacent.next.date)}</span>
+          </a>
+        ) : (
+          <div
+            class="rounded-sm border border-dashed border-rule p-4 text-right"
+            aria-hidden="true"
+          >
+            <span class="label">Latest</span>
+            <span class="mt-1.5 block text-ink-faint">This is the most recent</span>
+          </div>
+        )}
+      </div>
+    </nav>
+  )
+}
+
+{
+  related.length > 0 && (
+    <section
+      class:list={['border-t border-rule pt-6', hasAdjacent ? 'mt-10' : 'mt-14']}
+      aria-labelledby="related-heading"
+    >
+      {/* Related is tag-based, so it deliberately crosses sections — an
+          engineering note and a poem can share a subject. */}
+      <h2 id="related-heading" class="label mb-4">
+        Related
+      </h2>
+      <ul class="flex flex-col gap-4">
+        {related.map((post) => (
+          <li>
+            <a href={post.url} class="group block no-underline">
+              <span class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span class="label label-accent">{post.section.label}</span>
+                <span class="meta">{formatDateShort(post.date)}</span>
+              </span>
+              <span
+                lang={post.lang}
+                class="mt-1 block text-ink transition-colors group-hover:text-madder-ink"
+              >
+                {post.title}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}

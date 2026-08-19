@@ -4,7 +4,15 @@ import Callout from '../../components/mdx/Callout.astro';
 import Figure from '../../components/mdx/Figure.astro';
 import Gallery from '../../components/mdx/Gallery.astro';
 import Video from '../../components/mdx/Video.astro';
-import { getAllPosts, getSeriesPosition, type Post, type SeriesPosition } from '../../lib/posts';
+import {
+  getAdjacentPosts,
+  getAllPosts,
+  getRelatedPosts,
+  getSeriesPosition,
+  type Adjacent,
+  type Post,
+  type SeriesPosition,
+} from '../../lib/posts';
 
 export const prerender = true;
 
@@ -14,7 +22,12 @@ export async function getStaticPaths() {
   return Promise.all(
     posts.map(async (post) => ({
       params: { section: post.section.id, slug: post.slug },
-      props: { post, seriesPosition: await getSeriesPosition(post) },
+      props: {
+        post,
+        seriesPosition: await getSeriesPosition(post),
+        adjacent: await getAdjacentPosts(post),
+        related: await getRelatedPosts(post),
+      },
     })),
   );
 }
@@ -22,9 +35,11 @@ export async function getStaticPaths() {
 interface Props {
   post: Post;
   seriesPosition?: SeriesPosition;
+  adjacent: Adjacent;
+  related: Post[];
 }
 
-const { post, seriesPosition } = Astro.props;
+const { post, seriesPosition, adjacent, related } = Astro.props;
 const { Content } = await post.entry.render();
 
 /**
@@ -35,6 +50,11 @@ const { Content } = await post.entry.render();
 const components = { Callout, Figure, Gallery, Video };
 ---
 
-<PostLayout post={post} seriesPosition={seriesPosition}>
+<PostLayout
+  post={post}
+  seriesPosition={seriesPosition}
+  adjacent={adjacent}
+  related={related}
+>
   <Content components={components} />
 </PostLayout>
