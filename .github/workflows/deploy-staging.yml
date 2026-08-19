@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - staging
+  # Manual trigger, so a deploy that failed for a reason unrelated to the code —
+  # a host outage, a refused FTP connection — can be retried without inventing a
+  # commit to push. Re-running an old run replays that run's commit; this always
+  # builds the current tip of staging.
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
