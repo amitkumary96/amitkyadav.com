@@ -32,7 +32,13 @@ export const prerender = true;
         </p>
       </header>
 
-      <form id="contact-form" class="mt-10 flex flex-col gap-6" novalidate>
+      <form
+        id="contact-form"
+        class="mt-10 flex flex-col gap-6"
+        method="post"
+        enctype="text/plain"
+        action={`mailto:${SITE.social.email}`}
+      >
         <div class="flex flex-col gap-2">
           <label for="name" class="label">Your name</label>
           <input
@@ -175,11 +181,6 @@ export const prerender = true;
 
       if (!name || !email || !message) {
         show('Please fill in your name, your email and a message.');
-        return;
-      }
-
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        show('That email address does not look right — please check it.');
         return;
       }
 

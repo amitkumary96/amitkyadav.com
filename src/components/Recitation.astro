@@ -4,11 +4,11 @@
  *
  * Deliberately not a bare <audio controls>: the browser widget is visually
  * foreign to a page set like a book. This is a small custom transport over the
- * same native element, so seeking, keyboard access and screen readers still
- * work through real controls.
+ * same native element, so seeking, keyboard access and screen readers still work
+ * through real controls.
  *
- * preload="none" matters. A recitation is a few megabytes, and fetching it
- * before anyone presses play would cost every visitor the download.
+ * preload="none" matters. A recitation is a few megabytes, and fetching it before
+ * anyone presses play would cost every visitor the download.
  */
 interface Props {
   src: string;
@@ -17,8 +17,14 @@ interface Props {
 
 const { src, label = 'Listen to the poet read this' } = Astro.props;
 
-// Distinct ids so several players can coexist on one page — a series index, say.
-const uid = `recitation-${Math.random().toString(36).slice(2, 9)}`;
+/**
+ * Derived from the source path rather than randomised. A random id changed the
+ * markup on every build even when nothing about the page had, which made the FTP
+ * sync re-upload unchanged pages and made two builds impossible to diff.
+ */
+let hash = 0;
+for (const char of src) hash = (hash * 31 + char.charCodeAt(0)) % 0xffffffff;
+const uid = `recitation-${hash.toString(36)}`;
 ---
 
 <figure
@@ -26,7 +32,13 @@ const uid = `recitation-${Math.random().toString(36).slice(2, 9)}`;
   data-recitation
   aria-labelledby={`${uid}-label`}
 >
-  <div class="flex items-center gap-4">
+  <p id={`${uid}-label`} class="label label-accent mb-3">{label}</p>
+
+  <!-- The custom transport needs JavaScript to mean anything, so it is hidden
+       until JS confirms itself by removing .no-js from <html>. Without that
+       guard a no-JS visitor saw a dead play button above a working native
+       player. -->
+  <div class="recitation-transport flex items-center gap-4">
     <button
       type="button"
       data-play
@@ -53,29 +65,25 @@ const uid = `recitation-${Math.random().toString(36).slice(2, 9)}`;
       </svg>
     </button>
 
-    <div class="min-w-0 flex-1">
-      <p id={`${uid}-label`} class="label label-accent mb-1.5">{label}</p>
-
-      <div class="flex items-center gap-3">
-        <input
-          type="range"
-          data-seek
-          min="0"
-          max="100"
-          value="0"
-          step="0.1"
-          class="seek h-1 w-full cursor-pointer"
-          aria-label="Seek within recitation"
-        />
-        <span class="meta shrink-0 tabular-nums" data-time>0:00</span>
-      </div>
+    <div class="flex min-w-0 flex-1 items-center gap-3">
+      <input
+        type="range"
+        data-seek
+        min="0"
+        max="100"
+        value="0"
+        step="0.1"
+        class="seek h-1 w-full cursor-pointer"
+        aria-label="Seek within recitation"
+      />
+      <span class="meta shrink-0" data-time>0:00</span>
     </div>
   </div>
 
   <audio data-audio preload="none" src={src}></audio>
 
   <noscript>
-    <audio controls preload="none" src={src} class="mt-3 w-full"></audio>
+    <audio controls preload="none" src={src} class="w-full"></audio>
   </noscript>
 </figure>
 
@@ -115,9 +123,7 @@ const uid = `recitation-${Math.random().toString(36).slice(2, 9)}`;
     background: var(--madder);
   }
 
-  /* Without JavaScript the custom transport cannot work, so hide it and let the
-     <noscript> native player take over. */
-  html.no-js .recitation > div:first-child {
+  :global(html.no-js) .recitation-transport {
     display: none;
   }
 </style>

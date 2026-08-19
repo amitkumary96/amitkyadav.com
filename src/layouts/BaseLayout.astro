@@ -5,6 +5,17 @@ import '@fontsource-variable/ibm-plex-sans/wght.css';
 import '@fontsource/ibm-plex-mono/latin-400.css';
 import '../styles/global.css';
 
+/**
+ * Hashed URLs for the two faces worth preloading. Without these the browser has
+ * to parse the stylesheet before it discovers them, which showed as a flash of
+ * fallback text — most visibly on Devanagari pages, where the face is 124 KB.
+ *
+ * Only the subsets actually used are preloaded, and the Devanagari one only on
+ * Devanagari pages, so an English page never pays for it.
+ */
+import literataLatin from '@fontsource-variable/literata/files/literata-latin-wght-normal.woff2?url';
+import devanagari from '@fontsource-variable/noto-serif-devanagari/files/noto-serif-devanagari-devanagari-wght-normal.woff2?url';
+
 import DarkModeToggle from '../components/DarkModeToggle.astro';
 import { NAV, SITE } from '../config/site';
 
@@ -48,20 +59,30 @@ const ogImage = image ? new URL(image, origin).href : null;
 const isProductionOrigin = origin === `https://${SITE.domain}`;
 
 const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+
+/**
+ * Exact match, or a descendant path. A bare startsWith would have marked a
+ * future "/poet" nav item current on "/poetry-collection" — cheap to get right
+ * now rather than debug later.
+ */
 const isCurrent = (href: string) =>
-  href === '/' ? currentPath === '/' : currentPath.startsWith(href);
+  href === '/'
+    ? currentPath === '/'
+    : currentPath === href || currentPath.startsWith(`${href}/`);
 ---
 
 <!doctype html>
-<html lang={lang}>
+<html lang={lang} class="no-js">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Applies the stored theme before first paint. Anything later, including a
-         deferred module, would show a flash of the wrong colours. -->
+    <!-- Applies the stored theme before first paint, and drops the .no-js class
+         so progressive-enhancement styling can key off it. Anything later,
+         including a deferred module, would flash the wrong colours. -->
     <script is:inline>
       (() => {
+        document.documentElement.classList.remove('no-js');
         try {
           const stored = localStorage.getItem('theme');
           const dark =
@@ -98,6 +119,25 @@ const isCurrent = (href: string) =>
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
     {ogImage && <meta name="twitter:image" content={ogImage} />}
+
+    <link
+      rel="preload"
+      href={literataLatin}
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+    {
+      lang === 'hi' && (
+        <link
+          rel="preload"
+          href={devanagari}
+          as="font"
+          type="font/woff2"
+          crossorigin="anonymous"
+        />
+      )
+    }
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link
@@ -252,10 +292,27 @@ const isCurrent = (href: string) =>
         const nav = document.getElementById('mobile-nav');
         if (!button || !nav) return;
 
-        button.addEventListener('click', () => {
-          const open = nav.classList.toggle('hidden') === false;
+        const setOpen = (open) => {
+          nav.classList.toggle('hidden', !open);
           button.setAttribute('aria-expanded', String(open));
           button.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        };
+
+        button.addEventListener('click', () => {
+          setOpen(nav.classList.contains('hidden'));
+        });
+
+        // Escape closes it and returns focus to the control that opened it.
+        document.addEventListener('keydown', (event) => {
+          if (event.key !== 'Escape' || nav.classList.contains('hidden')) return;
+          setOpen(false);
+          button.focus();
+        });
+
+        // Widening past the breakpoint hides the button but left the panel open
+        // underneath the desktop nav, with no way to dismiss it.
+        window.matchMedia('(min-width: 768px)').addEventListener('change', (event) => {
+          if (event.matches) setOpen(false);
         });
       })();
     </script>

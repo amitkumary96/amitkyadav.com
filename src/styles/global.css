@@ -68,6 +68,12 @@
     background-color: var(--paper);
     color: var(--ink);
     font-family: var(--font-serif);
+    /* Declared explicitly rather than left as Tailwind preflight's
+       `line-height: inherit`. With inherit, any rule that set a line-height on
+       the root element leaked into the entire document — which is exactly what
+       [lang='hi'] on <html> used to do, loosening the nav and footer on every
+       Devanagari page. */
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -92,13 +98,23 @@
     border-radius: 2px;
   }
 
-  /* Devanagari sits taller and lower than Latin; it needs its own face and
-     more room between lines wherever it appears. Matched exactly rather than
-     with :lang(hi), which would also capture hi-Latn — Hinglish in Latin
-     script, which wants none of this. */
+  /* Devanagari needs its own face wherever it appears. Matched exactly rather
+     than with :lang(hi), which would also capture hi-Latn — Hinglish in Latin
+     script, which wants none of this.
+
+     Only the face is set globally. Leading is applied to text blocks further
+     down instead, because PostLayout puts lang="hi" on <html>: setting
+     line-height here re-spaced the navigation and footer too. */
   [lang='hi'] {
     font-family: var(--font-deva);
-    line-height: 1.9;
+  }
+
+  /* Devanagari matras sit above and below the baseline, so headings need more
+     room than their Latin equivalents. */
+  h1[lang='hi'],
+  h2[lang='hi'],
+  h3[lang='hi'] {
+    line-height: 1.38;
   }
 }
 
@@ -175,6 +191,12 @@
   text-wrap: pretty;
 }
 
+/* Devanagari prose, scoped to the text block so the page chrome keeps its own
+   rhythm. */
+.article-prose[lang='hi'] {
+  line-height: 1.95;
+}
+
 .article-prose :where(code):not(:where(pre code)) {
   font-family: var(--font-mono);
   font-size: 0.86em;
@@ -226,7 +248,6 @@
 .article-verse p {
   white-space: pre-line;
   margin: 0 0 1.6em;
-  text-wrap: initial; /* never re-balance a line the poet chose to break */
 }
 
 .article-verse p:last-child {

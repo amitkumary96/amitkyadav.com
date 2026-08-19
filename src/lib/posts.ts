@@ -36,8 +36,7 @@ export interface Post {
 
 /**
  * Drafts are visible while writing and on staging, and hidden on the production
- * build. SHOW_DRAFTS lets the staging build opt in explicitly; see the deploy
- * workflows.
+ * build. The staging workflow sets SHOW_DRAFTS explicitly.
  */
 const SHOW_DRAFTS =
   import.meta.env.DEV ||
@@ -48,19 +47,41 @@ const SHOW_DRAFTS =
   (typeof process !== 'undefined' && process.env?.SHOW_DRAFTS === 'true');
 
 /**
- * Which sections currently hold at least one file.
+ * How many content files each section holds on disk.
  *
- * Every section is declared in content/config.ts whether or not it has posts
- * yet, which is the point — a new section should not need a config change. But
- * calling getCollection on an empty one makes Astro warn once per call, and at
- * eleven pages that was fourteen warnings per build, drowning out real ones.
+ * The glob is recursive on purpose. It used to stop one level deep, which meant
+ * a chapter filed at story/a-novel/ch-01.md was invisible: the section reported
+ * itself empty and the build still succeeded. Nesting is exactly what a
+ * serialised story wants, so that was silent content loss — the same class of
+ * failure this module exists to eliminate.
  *
- * This resolves at build time from the file list itself, with no I/O.
+ * Paths containing a underscore-prefixed segment are skipped to match Astro's
+ * own rule, so colocated _assets/ folders and _wip.md scratch files do not count.
  */
-const POPULATED_SECTIONS = new Set(
-  Object.keys(import.meta.glob('../content/*/*.{md,mdx}')).map(
-    // '../content/poet/rat-aur-tum.md' -> 'poet'
-    (path) => path.split('/')[2],
+const SECTION_FILE_COUNTS: ReadonlyMap<string, number> = (() => {
+  const counts = new Map<string, number>();
+
+  for (const filePath of Object.keys(import.meta.glob('../content/**/*.{md,mdx}'))) {
+    // '../content/story/a-novel/ch-01.md' -> ['..','content','story','a-novel','ch-01.md']
+    const segments = filePath.split('/');
+    const section = segments[2];
+    if (!section || segments.slice(2).some((part) => part.startsWith('_'))) continue;
+    counts.set(section, (counts.get(section) ?? 0) + 1);
+  }
+
+  return counts;
+})();
+
+/**
+ * Audio files present in public/. Keys only — the glob never imports them, so no
+ * binary reaches the bundle.
+ *
+ * A recitation path is only a string in frontmatter, so a typo would otherwise
+ * ship a silent 404 on the one feature nobody would think to retest.
+ */
+const AVAILABLE_AUDIO: ReadonlySet<string> = new Set(
+  Object.keys(import.meta.glob('../../public/audio/**/*.{mp3,m4a,ogg,wav}')).map(
+    (filePath) => filePath.replace('../../public', ''),
   ),
 );
 
@@ -71,20 +92,47 @@ function readingMinutes(body: string): number {
 }
 
 /**
- * URL-safe slug that keeps non-Latin letters instead of stripping them. A
- * naive `[^a-z0-9]` slugify would reduce "कहानी" to an empty string.
+ * URL-safe slug that keeps non-Latin letters instead of stripping them. A naive
+ * `[^a-z0-9]` slugify would reduce "कहानी" to an empty string.
+ *
+ * Punctuation that carries meaning in technical tags is spelled out first,
+ * because dropping it silently merged distinct tags: "C++" and "C" both used to
+ * collapse to "c".
  */
 export function slugify(input: string): string {
-  return input
+  const spelled = input
     .trim()
     .toLowerCase()
+    .replace(/\+\+/g, '-plus-plus')
+    .replace(/\+/g, '-plus')
+    .replace(/#/g, '-sharp')
+    .replace(/&/g, '-and-')
+    .replace(/\./g, '-dot-');
+
+  const slug = spelled
     .replace(/['’"“”]/gu, '')
     .replace(/[^\p{L}\p{N}]+/gu, '-')
     .replace(/^-+|-+$/gu, '');
+
+  if (slug) return slug;
+
+  // A tag of pure punctuation would otherwise produce an empty slug, and a page
+  // at /tags/ colliding with the tag index.
+  let hash = 0;
+  for (const char of input) hash = (hash * 31 + char.codePointAt(0)!) % 0xffffffff;
+  return 'tag-' + hash.toString(36);
 }
 
 function toPost(entry: PostEntry, section: Section): Post {
   const { data } = entry;
+
+  if (data.audio && !AVAILABLE_AUDIO.has(data.audio)) {
+    const available = [...AVAILABLE_AUDIO].join(', ') || '(none)';
+    throw new Error(
+      `${section.id}/${entry.slug}: audio "${data.audio}" is not in public/. Available: ${available}`,
+    );
+  }
+
   return {
     entry,
     section,
@@ -106,19 +154,50 @@ function toPost(entry: PostEntry, section: Section): Post {
 
 const byDateDesc = (a: Post, b: Post) => b.date.getTime() - a.date.getTime();
 
+/**
+ * Collections are read once per build. Without this, getAllSeries -> getAllPosts
+ * fanned out across all four collections again for every section page and every
+ * tag page.
+ */
+const sectionCache = new Map<SectionId, Post[]>();
+
 /** Every published post in one section, newest first. */
 export async function getSectionPosts(sectionId: SectionId): Promise<Post[]> {
+  const cached = sectionCache.get(sectionId);
+  if (cached) return cached;
+
   const section = getSection(sectionId);
-  if (!section || !POPULATED_SECTIONS.has(sectionId)) return [];
+  const fileCount = SECTION_FILE_COUNTS.get(sectionId) ?? 0;
+
+  if (!section || fileCount === 0) {
+    sectionCache.set(sectionId, []);
+    return [];
+  }
 
   // The cast is needed because the collection name is a variable rather than a
   // literal; the ids come straight from SECTIONS, so it is safe by construction.
   const entries = (await getCollection(sectionId as CollectionKey)) as PostEntry[];
 
-  return entries
+  /**
+   * Fail loudly when the collection yields fewer entries than there are files.
+   * A dropped post looks identical to "nothing written yet" on the rendered
+   * page, so it must never be silent again.
+   */
+  if (entries.length !== fileCount) {
+    throw new Error(
+      `Section "${sectionId}" has ${fileCount} content file(s) on disk but the collection ` +
+        `yielded ${entries.length}. A post is being dropped silently — check for an ` +
+        `unsupported extension or a frontmatter parse failure.`,
+    );
+  }
+
+  const posts = entries
     .filter((entry) => SHOW_DRAFTS || !entry.data.draft)
     .map((entry) => toPost(entry, section))
     .sort(byDateDesc);
+
+  sectionCache.set(sectionId, posts);
+  return posts;
 }
 
 /** Every published post across every section, newest first. */
@@ -142,11 +221,15 @@ export interface Series {
   readonly parts: readonly Post[];
 }
 
+let seriesCache: Series[] | undefined;
+
 /**
  * Groups posts into series. A story in chapters and a recurring column are the
  * same shape, so they share one mechanism.
  */
 export async function getAllSeries(): Promise<Series[]> {
+  if (seriesCache) return seriesCache;
+
   const posts = await getAllPosts();
   const grouped = new Map<string, Post[]>();
 
@@ -158,11 +241,27 @@ export async function getAllSeries(): Promise<Series[]> {
     else grouped.set(key, [post]);
   }
 
-  return [...grouped.entries()]
+  seriesCache = [...grouped.entries()]
     .map(([key, parts]) => {
       const sorted = [...parts].sort(
         (a, b) => (a.series?.order ?? 0) - (b.series?.order ?? 0),
       );
+
+      /**
+       * Two parts claiming the same position sort arbitrarily, which reads as a
+       * random chapter order and is impossible to diagnose from the page.
+       */
+      const orders = sorted.map((part) => part.series!.order);
+      const duplicates = [
+        ...new Set(orders.filter((order, index) => orders.indexOf(order) !== index)),
+      ];
+      if (duplicates.length > 0) {
+        throw new Error(
+          `Series "${sorted[0].series!.name}" has more than one part at position ` +
+            `${duplicates.join(', ')}. Every part needs a distinct order.`,
+        );
+      }
+
       return {
         slug: key,
         name: sorted[0].series!.name,
@@ -171,6 +270,8 @@ export async function getAllSeries(): Promise<Series[]> {
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  return seriesCache;
 }
 
 export interface SeriesPosition {
@@ -186,7 +287,8 @@ export async function getSeriesPosition(post: Post): Promise<SeriesPosition | un
   if (!post.series) return undefined;
 
   const all = await getAllSeries();
-  const series = all.find((s) => s.slug === `${post.section.id}/${slugify(post.series!.name)}`);
+  const wanted = `${post.section.id}/${slugify(post.series.name)}`;
+  const series = all.find((s) => s.slug === wanted);
   if (!series) return undefined;
 
   const index = series.parts.findIndex((p) => p.url === post.url);

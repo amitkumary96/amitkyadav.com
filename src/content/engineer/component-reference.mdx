@@ -1,0 +1,86 @@
+---
+title: Component Reference
+date: 2026-08-19
+draft: true
+lang: en
+tags: ["fixture", "MDX", "C++", "QA & Testing"]
+cover: ./_assets/fixture-cover.png
+coverAlt: A flat gradient from madder red to warm paper, standing in for a real cover image
+excerpt: A draft fixture exercising every in-body component, the cover image pipeline, and tag slugs that used to collide.
+---
+
+A deliberately boring post whose only job is to make sure nothing here rots.
+Every block below renders on each build, so a broken component becomes a build
+failure instead of something discovered months later in a real post.
+
+## Callouts
+
+<Callout>
+  A plain note. Set aside by a rule and a label rather than by colour, so the
+  page keeps to one accent hue.
+</Callout>
+
+<Callout type="warning" title="Worth knowing">
+  The warning variant is the only one that borrows the accent, which is why it
+  should stay rare.
+</Callout>
+
+<Callout type="aside">
+  An authorial aside — dotted rule, no fill.
+</Callout>
+
+## Code
+
+Syntax highlighting happens at build time, with no JavaScript shipped:
+
+```ts
+export function slugify(input: string): string {
+  // "C++" and "C" used to collapse to the same slug.
+  return input.replace(/\+\+/g, '-plus-plus');
+}
+```
+
+Inline `code` should sit in a hairline box without stray backticks around it.
+
+## A captioned figure
+
+<Figure caption="The cover image, reused here to keep the caption path exercised.">
+
+![A flat madder-to-paper gradient](./_assets/fixture-cover.png)
+
+</Figure>
+
+## A gallery
+
+Two of the same image, which is enough to prove the grid and the object-fit
+cropping behave:
+
+<Gallery columns={2} caption="One image twice — the grid is what is under test.">
+
+![Gradient, left cell](./_assets/fixture-cover.png)
+
+![Gradient, right cell](./_assets/fixture-cover.png)
+
+</Gallery>
+
+## Video
+
+Nothing loads until the panel is clicked, and then only from the nocookie
+domain:
+
+<Video id="dQw4w9WgXcQ" title="Placeholder video" caption="Replace the id with a real one when this pattern is used for real." />
+
+## Ordinary prose furniture
+
+A blockquote, because the typography plugin styles it and nobody would notice if
+that broke:
+
+> Quality is not an act, it is a habit.
+
+1. An ordered list
+2. with two items
+
+- and an unordered one
+- with two more
+
+Delete this post once real components and real writing have replaced it.
