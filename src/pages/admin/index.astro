@@ -1,0 +1,183 @@
+---
+import { SITE } from '../../config/site';
+
+export const prerender = true;
+
+/**
+ * The writing desk: Sveltia CMS, a static single-page app that talks straight to
+ * the GitHub API.
+ *
+ * Why this shape:
+ *   - No server. Sign-in is a fine-grained personal access token pasted once, so
+ *     there is no OAuth app and no proxy to host — which is the only reason a
+ *     browser-based CMS can run on static hosting at all.
+ *   - It commits to `staging`, never to `master`. Publishing is a separate
+ *     one-tap workflow, so nothing written here can reach the live site by
+ *     accident.
+ *   - astro.config.mjs strips /admin from a production build, so this page
+ *     exists on staging only. One place to write, no ambiguity about which
+ *     branch is being edited — and doing it in the build rather than the deploy
+ *     workflow means a local production build matches CI.
+ *
+ * Deliberately not using BaseLayout — the CMS owns the whole viewport and none of
+ * the site's own typography or chrome should apply to it.
+ */
+
+// Pinned to a patch range. On a 0.x line a minor bump can break, and an editor
+// that silently changes under you is worse than one that lags.
+const CMS_SCRIPT = 'https://unpkg.com/@sveltia/cms@~0.193.1/dist/sveltia-cms.js';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Write — {SITE.title}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link href="/admin/config.yml" type="text/yaml" rel="cms-config-url" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #fbfaf8;
+      }
+
+      /* Shown only until the CMS bundle takes over the page. */
+      #boot {
+        display: grid;
+        place-items: center;
+        gap: 0.75rem;
+        height: 100%;
+        font-family: system-ui, sans-serif;
+        color: #52525f;
+        text-align: center;
+        padding: 1.5rem;
+      }
+
+      #boot code {
+        font-size: 0.85em;
+        background: #f2f0ec;
+        border: 1px solid #e2ded8;
+        border-radius: 2px;
+        padding: 0.1em 0.35em;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="boot">
+      <p><strong>Loading the editor…</strong></p>
+      <p>
+        Sign in with a GitHub personal access token scoped to
+        <code>{SITE.repo}</code>. Everything you save commits to
+        <code>staging</code>.
+      </p>
+      <noscript>
+        <p>This editor needs JavaScript.</p>
+      </noscript>
+    </div>
+
+    <script is:inline src={CMS_SCRIPT}></script>
+
+    <script is:inline>
+      /**
+       * Custom blocks, offered under the editor's Insert menu.
+       *
+       * Only registered for .mdx sections — a component tag written into a .md
+       * file would render as literal text. The poetry section is .md on purpose,
+       * and gets its media from frontmatter instead.
+       *
+       * Each block round-trips through a regex: `pattern` finds it when reopening
+       * a post, `fromBlock` reads the values out, `toBlock` writes them back.
+       */
+      (() => {
+        const register = () => {
+          const CMS = window.CMS;
+          if (!CMS || typeof CMS.registerEditorComponent !== 'function') return false;
+
+          CMS.registerEditorComponent({
+            id: 'video',
+            label: 'Video (YouTube)',
+            fields: [
+              {
+                name: 'id',
+                label: 'YouTube video ID',
+                widget: 'string',
+                hint: 'Just the ID — the part after v= in the URL, not the whole link.',
+              },
+              { name: 'title', label: 'Title', widget: 'string' },
+              { name: 'caption', label: 'Caption', widget: 'string', required: false },
+            ],
+            pattern: /^<Video\s+id="([^"]*)"\s+title="([^"]*)"(?:\s+caption="([^"]*)")?\s*\/>$/,
+            fromBlock: (match) => ({
+              id: match[1],
+              title: match[2],
+              caption: match[3] || '',
+            }),
+            toBlock: ({ id, title, caption }) =>
+              caption
+                ? `<Video id="${id || ''}" title="${title || ''}" caption="${caption}" />`
+                : `<Video id="${id || ''}" title="${title || ''}" />`,
+            toPreview: ({ title }) =>
+              `<p style="border:1px solid #c9c4bc;padding:1rem;text-align:center">Video: ${
+                title || 'untitled'
+              }</p>`,
+          });
+
+          CMS.registerEditorComponent({
+            id: 'callout',
+            label: 'Callout',
+            fields: [
+              {
+                name: 'type',
+                label: 'Kind',
+                widget: 'select',
+                options: ['note', 'warning', 'aside'],
+                default: 'note',
+              },
+              { name: 'title', label: 'Heading', widget: 'string', required: false },
+              { name: 'text', label: 'Text', widget: 'text' },
+            ],
+            pattern: /^<Callout\s+type="([^"]*)"(?:\s+title="([^"]*)")?\s*>\n([\s\S]*?)\n<\/Callout>$/,
+            fromBlock: (match) => ({
+              type: match[1],
+              title: match[2] || '',
+              text: match[3],
+            }),
+            toBlock: ({ type, title, text }) => {
+              const attrs = title
+                ? `type="${type || 'note'}" title="${title}"`
+                : `type="${type || 'note'}"`;
+              return `<Callout ${attrs}>\n${text || ''}\n</Callout>`;
+            },
+            toPreview: ({ type, title, text }) =>
+              `<aside style="border-left:3px solid #a32e33;padding:0.5rem 0.75rem"><strong>${
+                title || type || 'Note'
+              }</strong><br>${text || ''}</aside>`,
+          });
+
+          return true;
+        };
+
+        // The bundle is a classic script so window.CMS should already exist, but
+        // fail loudly rather than silently skipping the blocks if it does not.
+        if (register()) return;
+
+        let attempts = 0;
+        const timer = setInterval(() => {
+          attempts += 1;
+          if (register() || attempts > 40) {
+            clearInterval(timer);
+            if (attempts > 40) {
+              console.error(
+                '[admin] Sveltia CMS did not expose window.CMS — custom blocks are unavailable.',
+              );
+            }
+          }
+        }, 100);
+      })();
+    </script>
+  </body>
+</html>

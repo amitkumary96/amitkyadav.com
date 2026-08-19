@@ -10,6 +10,8 @@
 export const SITE = {
   title: 'Amit Kumar Yadav',
   domain: 'amitkyadav.com',
+  /** owner/name on GitHub. The CMS commits here. */
+  repo: 'amitkumary96/amitkyadav.com',
   tagline: 'Engineer, poet, storyteller',
   description:
     'Writing on engineering and AI, Hindi poetry, and stories — by Amit Kumar Yadav.',
@@ -40,6 +42,12 @@ export type PostLang = 'hi' | 'hi-Latn' | 'en';
 export interface Section {
   readonly id: SectionId;
   readonly label: string;
+  /**
+   * What one item is called. Stated rather than derived: guessing English
+   * morphology from the plural turned "Poetry" into "Poetry" and would have
+   * turned "Stories" into "Storie" without a second rule.
+   */
+  readonly labelSingular: string;
   /** Devanagari name, shown alongside the label where the register is literary. */
   readonly native?: string;
   readonly blurb: string;
@@ -48,6 +56,15 @@ export interface Section {
   readonly defaultFormat: PostFormat;
   /** Applied when a post does not set `lang` itself. */
   readonly defaultLang: PostLang;
+  /**
+   * Which file type the CMS creates for this section.
+   *
+   * `mdx` unlocks the in-body blocks — video, gallery, callout, figure — because
+   * those are real components rather than markdown syntax. Poetry stays `md` on
+   * purpose: a stray `<` or `{` in verse would be an MDX parse error, and a poem
+   * needs none of those blocks. Its media comes from frontmatter instead.
+   */
+  readonly contentExtension: 'md' | 'mdx';
   /** Shown on the section page when it holds no published posts. */
   readonly emptyState: string;
 }
@@ -56,41 +73,49 @@ export const SECTIONS: readonly Section[] = [
   {
     id: 'engineer',
     label: 'Engineer',
+    labelSingular: 'Note',
     blurb:
       'Notes from testing, automation and AI — what broke, what held, and why.',
     register: 'workshop',
     defaultFormat: 'prose',
     defaultLang: 'en',
+    contentExtension: 'mdx',
     emptyState: 'No engineering notes published yet.',
   },
   {
     id: 'poet',
     label: 'Poetry',
+    labelSingular: 'Poem',
     native: 'कविता',
     blurb: 'Hindi and Hinglish verse. Some of it read aloud.',
     register: 'literary',
     defaultFormat: 'verse',
     defaultLang: 'hi',
+    contentExtension: 'md',
     emptyState: 'No poems published yet.',
   },
   {
     id: 'story',
     label: 'Stories',
+    labelSingular: 'Story',
     native: 'कहानी',
     blurb: 'Short fiction, and longer work published a chapter at a time.',
     register: 'literary',
     defaultFormat: 'prose',
     defaultLang: 'hi-Latn',
+    contentExtension: 'mdx',
     emptyState: 'No stories published yet.',
   },
   {
     id: 'life',
     label: 'Life',
+    labelSingular: 'Entry',
     native: 'जीवन',
     blurb: 'Everything else — what a week taught me, mostly.',
     register: 'literary',
     defaultFormat: 'prose',
     defaultLang: 'hi-Latn',
+    contentExtension: 'mdx',
     emptyState: 'Nothing published here yet.',
   },
 ] as const;

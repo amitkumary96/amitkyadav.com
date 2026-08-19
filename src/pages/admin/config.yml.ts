@@ -1,0 +1,195 @@
+import type { APIRoute } from 'astro';
+import { SECTIONS, SITE, type Section } from '../../config/site';
+
+export const prerender = true;
+
+/**
+ * The CMS configuration, generated from SECTIONS rather than hand-maintained.
+ *
+ * The previous CMS config drifted out of sync with the site — three collections
+ * when there were four, a field the site no longer read, and none of the newer
+ * ones. Deriving it means adding a section updates the editor in the same commit
+ * that adds it to the site, and the two cannot disagree.
+ *
+ * Serialised as JSON, which every YAML parser accepts, because YAML is a
+ * superset of it. The first version of this file wrote YAML by hand and mixed
+ * flow mappings with block sequences, producing a config that parsed nowhere —
+ * a mistake that would only have surfaced on opening the editor. Building an
+ * object and letting JSON.stringify format it makes that class of bug
+ * impossible. The explanation lives here, in the source, which is where a
+ * maintainer would look for it anyway.
+ */
+
+interface CmsField {
+  name: string;
+  label: string;
+  widget: string;
+  required?: boolean;
+  default?: unknown;
+  hint?: string;
+  [key: string]: unknown;
+}
+
+const LANGUAGE_OPTIONS = [
+  { label: 'Hindi (Devanagari)', value: 'hi' },
+  { label: 'Hinglish (Latin script)', value: 'hi-Latn' },
+  { label: 'English', value: 'en' },
+];
+
+const FORMAT_OPTIONS = [
+  { label: 'Prose', value: 'prose' },
+  { label: 'Verse - keeps the line breaks you type', value: 'verse' },
+];
+
+/** Mirrors the Zod schema in src/content/config.ts, field for field. */
+function fieldsFor(section: Section): CmsField[] {
+  return [
+    { name: 'title', label: 'Title', widget: 'string', required: true },
+    {
+      name: 'date',
+      label: 'Date',
+      widget: 'datetime',
+      date_format: 'YYYY-MM-DD',
+      time_format: false,
+      picker_utc: true,
+    },
+    {
+      name: 'excerpt',
+      label: 'Excerpt',
+      widget: 'text',
+      required: false,
+      hint: 'Shown on cards, in the feed, and as the page description.',
+    },
+    {
+      name: 'draft',
+      label: 'Draft',
+      widget: 'boolean',
+      default: true,
+      hint: 'On by default. A draft appears on staging only and is never indexed.',
+    },
+    {
+      name: 'tags',
+      label: 'Tags',
+      widget: 'list',
+      required: false,
+      hint: 'Tag pages cut across every section.',
+    },
+    {
+      name: 'format',
+      label: 'Format',
+      widget: 'select',
+      options: FORMAT_OPTIONS,
+      default: section.defaultFormat,
+    },
+    {
+      name: 'lang',
+      label: 'Language',
+      widget: 'select',
+      options: LANGUAGE_OPTIONS,
+      default: section.defaultLang,
+    },
+    { name: 'cover', label: 'Cover image', widget: 'image', required: false },
+    {
+      name: 'coverAlt',
+      label: 'Cover description',
+      widget: 'string',
+      required: false,
+      hint: 'Required whenever a cover is set - the build fails without it.',
+    },
+    {
+      // Recitation is the point of the poetry section, so it is named plainly
+      // there. The file lands in public/audio and the frontmatter records a
+      // site-root path, which is what the schema validates against disk.
+      name: 'audio',
+      label: section.id === 'poet' ? 'Recitation' : 'Audio',
+      widget: 'file',
+      required: false,
+      media_folder: '/public/audio',
+      public_folder: '/audio',
+      hint: 'Record on your phone and upload. Optional, always.',
+    },
+    { name: 'audioLabel', label: 'Audio label', widget: 'string', required: false },
+    {
+      name: 'series',
+      label: 'Series',
+      widget: 'object',
+      required: false,
+      collapsed: true,
+      hint: 'For a story in chapters or a recurring column. Leave empty otherwise.',
+      fields: [
+        { name: 'name', label: 'Series name', widget: 'string', required: false },
+        {
+          name: 'order',
+          label: 'Part number',
+          widget: 'number',
+          value_type: 'int',
+          min: 1,
+          required: false,
+          hint: 'Must be unique within the series.',
+        },
+      ],
+    },
+    { name: 'body', label: 'Content', widget: 'markdown' },
+  ];
+}
+
+function collectionFor(section: Section) {
+  return {
+    name: section.id,
+    label: section.label,
+    label_singular: section.labelSingular,
+    folder: `src/content/${section.id}`,
+    extension: section.contentExtension,
+    format: 'frontmatter',
+    create: true,
+    slug: '{{fields.title}}',
+    // Relative, so uploads colocate beside the post as src/content/<section>/_assets
+    // and the frontmatter records ./_assets/name.jpg — the form Astro's image()
+    // pipeline resolves.
+    media_folder: '_assets',
+    public_folder: './_assets',
+    sortable_fields: ['date', 'title'],
+    // A component tag written into a .md file renders as literal text, so the
+    // in-body blocks are offered only where the file is .mdx.
+    editor_components:
+      section.contentExtension === 'mdx'
+        ? ['code-block', 'image', 'video', 'callout']
+        : ['code-block', 'image'],
+    fields: fieldsFor(section),
+  };
+}
+
+const config = {
+  backend: {
+    name: 'github',
+    repo: SITE.repo,
+    // Every save commits to staging, which deploys in about ninety seconds.
+    // Publishing to production is a separate one-tap workflow, so nothing
+    // written here can reach the live site by accident.
+    branch: 'staging',
+    commit_messages: {
+      create: 'content: add {{collection}} - {{slug}}',
+      update: 'content: update {{collection}} - {{slug}}',
+      delete: 'content: remove {{collection}} - {{slug}}',
+      uploadMedia: 'content: upload {{path}}',
+      deleteMedia: 'content: remove {{path}}',
+    },
+  },
+  publish_mode: 'simple',
+  media_folder: 'public/uploads',
+  public_folder: '/uploads',
+  // Empty optional fields are dropped rather than written as empty strings,
+  // which would fail schema validation on the next build.
+  omit_empty_optional_fields: true,
+  collections: SECTIONS.map(collectionFor),
+};
+
+const body = JSON.stringify(config, null, 2);
+
+export const GET: APIRoute = () =>
+  new Response(body, {
+    headers: {
+      'Content-Type': 'text/yaml; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    },
+  });

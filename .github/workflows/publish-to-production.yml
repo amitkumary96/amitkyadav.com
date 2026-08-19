@@ -1,0 +1,71 @@
+name: Publish to Production
+
+# The one-tap publish. Open Actions in the GitHub mobile app, pick this workflow,
+# Run workflow. It fast-forwards master to staging and deploys.
+#
+# Fast-forward only on purpose: if master has moved independently the merge fails
+# rather than inventing a merge commit, and tells you to reconcile first.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: List what would be published, then stop
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: publish-to-production
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      promoted: ${{ steps.merge.outputs.promoted }}
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Fast-forward master to staging
+        id: merge
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --no-tags origin staging
+
+          pending="$(git log --oneline master..origin/staging)"
+          if [ -z "$pending" ]; then
+            echo "promoted=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Nothing to publish — master already matches staging."
+            exit 0
+          fi
+
+          echo "### Publishing to amitkyadav.com" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "$pending" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "promoted=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dry run — nothing was pushed."
+            exit 0
+          fi
+
+          git merge --ff-only origin/staging
+          git push origin master
+          echo "promoted=true" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: promote
+    if: needs.promote.outputs.promoted == 'true'
+    uses: ./.github/workflows/deploy-production.yml
+    with:
+      ref: master
+    secrets: inherit

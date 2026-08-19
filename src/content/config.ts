@@ -53,13 +53,26 @@ const postSchema = ({ image }: { image: () => z.ZodType }) =>
       /**
        * Groups posts into an ordered sequence — a story in chapters, or a
        * recurring column. Any section can use it.
+       *
+       * The preprocess step exists because a CMS renders this as a collapsed
+       * object and can write it back empty — `{ name: '', order: null }` — for a
+       * post that is not part of any series. Treating that as absent keeps the
+       * editor from producing files its own site refuses to build.
        */
-      series: z
-        .object({
-          name: z.string().min(1),
-          order: z.number().int().positive(),
-        })
-        .optional(),
+      series: z.preprocess(
+        (value) => {
+          if (!value || typeof value !== 'object') return value ?? undefined;
+          const candidate = value as { name?: unknown; order?: unknown };
+          const hasName = typeof candidate.name === 'string' && candidate.name.trim() !== '';
+          return hasName ? value : undefined;
+        },
+        z
+          .object({
+            name: z.string().min(1),
+            order: z.number().int().positive(),
+          })
+          .optional(),
+      ),
     })
     /**
      * An image without a description is invisible to anyone using a screen

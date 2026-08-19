@@ -91,12 +91,42 @@ them once real writing covers the same ground.
 
 ## Editing
 
-Local editor: `npm run dev`, then <http://localhost:3000/keystatic>. It writes
-Markdown into `src/content/`. It cannot create nested folders — those are added
-by hand.
+### From anywhere, including a phone
 
-A browser-based CMS that works from a phone, with no dev server, is the next
-piece of work.
+<https://staging.amitkyadav.com/admin>
+
+Sveltia CMS, a static single-page app that talks straight to the GitHub API.
+Sign in with a **fine-grained personal access token** scoped to this repository —
+there is no OAuth app and no proxy server, which is the only reason a
+browser-based editor can run on static hosting at all.
+
+Every save is a commit to `staging`, so the staging site reflects it in about
+ninety seconds. Nothing written here can reach the live site by accident.
+
+The editor exists on staging only: `astro.config.mjs` strips `/admin` from a
+production build, so there is one place to write and no ambiguity about which
+branch is being edited.
+
+Its configuration is generated at `/admin/config.yml` from `SECTIONS`, so the
+editor cannot drift out of sync with the site — adding a section updates both in
+the same commit.
+
+In `.mdx` sections the toolbar offers **Insert → Video** and **Insert → Callout**
+alongside the built-in code block and image. Poetry is `.md`, so it gets images
+and frontmatter media instead; a component tag in a `.md` file would render as
+literal text.
+
+### Publishing
+
+GitHub → Actions → **Publish to Production** → Run workflow. It fast-forwards
+`master` to `staging` and deploys. Fast-forward only, so if `master` has moved
+independently the run fails and asks you to reconcile rather than inventing a
+merge commit. Tick `dry_run` to see what would be published without doing it.
+
+### On this machine
+
+`npm run dev`, then <http://localhost:3000/keystatic>. Kept as a fallback. It
+cannot create nested folders — those are added by hand.
 
 ## Environments
 
