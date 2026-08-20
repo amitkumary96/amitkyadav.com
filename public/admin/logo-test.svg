@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Test site editor">
+  <!-- The same mark, drained of the site's colour, with the nib outlined rather
+       than solid. Distinguishable from the live badge at favicon size by shape as
+       well as by colour, so it does not rely on colour vision alone. -->
+  <rect width="64" height="64" rx="13" fill="#3D3D49"/>
+  <path
+    d="M22 12 H42 L36 40 L32 52 L28 40 Z"
+    fill="none"
+    stroke="#EDEAE4"
+    stroke-width="3.5"
+    stroke-linejoin="round"
+  />
+</svg>

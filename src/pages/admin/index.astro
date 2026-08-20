@@ -16,9 +16,11 @@ export const prerender = true;
  *     staging exists to test code and design changes, and its editor lets the CMS
  *     itself be exercised after such a change without touching live writing.
  *
- * Because the two look identical, the banner below states which site and which
- * branch, unmissably. That label is the only thing standing between "I edited the
- * live site" and "I edited the test site".
+ * Because the two look identical, the environment is named in three places the
+ * CMS controls: its header title, its logo, and the browser tab. All three come
+ * from app_title and logo in config.yml.ts. An earlier attempt at a fixed banner
+ * of our own covered the CMS's search field and toolbar — the app owns the
+ * viewport, so the indicator has to be something it renders itself.
  *
  * Deliberately not using BaseLayout — the CMS owns the whole viewport and none of
  * the site's own typography or chrome should apply to it.
@@ -30,8 +32,13 @@ const CMS_SCRIPT = 'https://unpkg.com/@sveltia/cms@~0.193.1/dist/sveltia-cms.js'
 
 const origin = Astro.site?.origin ?? `https://${SITE.domain}`;
 const isProduction = origin === `https://${SITE.domain}`;
-const branch = isProduction ? 'master' : 'staging';
-const environment = isProduction ? 'LIVE SITE' : 'TEST SITE';
+
+/**
+ * The tab title carries the environment too. The CMS replaces this once it boots,
+ * but only after a network round trip — and this is what shows while the login
+ * screen is up, which is exactly when knowing the environment matters most.
+ */
+const pageTitle = isProduction ? 'LIVE — Write' : 'TEST — Write';
 ---
 
 <!doctype html>
@@ -40,7 +47,7 @@ const environment = isProduction ? 'LIVE SITE' : 'TEST SITE';
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Write — {SITE.title}</title>
+    <title>{pageTitle} — {SITE.title}</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link href="/admin/config.yml" type="text/yaml" rel="cms-config-url" />
     <style>
@@ -85,54 +92,16 @@ const environment = isProduction ? 'LIVE SITE' : 'TEST SITE';
         padding: 0.1em 0.35em;
       }
 
-      /* Stays visible above the editor once it loads. The two environments are
-         visually identical otherwise, and this is the only thing distinguishing
-         "editing the live site" from "editing the test site". */
-      #env {
-        position: fixed;
-        inset: 0 0 auto 0;
-        z-index: 9999;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        justify-content: center;
-        gap: 0.35rem 0.75rem;
-        padding: 0.3rem 0.75rem;
-        font-family: system-ui, sans-serif;
-        font-size: 0.72rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: #fbfaf8;
-        pointer-events: none;
-      }
+      /* No environment banner here on purpose.
 
-      #env.is-live {
-        background: #a32e33;
-      }
-
-      #env.is-test {
-        background: #3d3d49;
-      }
-
-      #env .env-detail {
-        letter-spacing: 0.04em;
-        text-transform: none;
-        opacity: 0.85;
-      }
-
-      body {
-        padding-top: 1.6rem;
-      }
+         A fixed bar across the top covered Sveltia's search field and toolbar and
+         clipped its own text — the CMS owns the viewport, and anything positioned
+         over it fights a layout we do not control and would break again on their
+         next release. The indicator now comes from `app_title` and `logo` in
+         config.yml.ts, which the CMS places in its own header. */
     </style>
   </head>
   <body>
-    <div id="env" class={isProduction ? 'is-live' : 'is-test'}>
-      <strong>{environment}</strong>
-      <span class="env-detail">
-        {origin.replace('https://', '')} · saves commit to <code>{branch}</code>
-      </span>
-    </div>
-
     <div id="boot">
       <p><strong>Loading the editor…</strong></p>
 

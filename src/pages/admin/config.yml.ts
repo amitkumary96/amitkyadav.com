@@ -199,6 +199,23 @@ function configFor(origin: string) {
   const isProduction = origin === `https://${SITE.domain}`;
 
   return {
+    /**
+     * The environment indicator, placed by the CMS in its own header rather than
+     * by us on top of it.
+     *
+     * The first attempt was a fixed banner across the viewport, which covered
+     * Sveltia's search field and toolbar and clipped its own text — injecting
+     * layout into an app that owns the whole screen. These two options exist for
+     * exactly this purpose, so the CMS lays them out itself and nothing overlaps.
+     */
+    app_title: isProduction ? 'LIVE — amitkyadav.com' : 'TEST — staging',
+    logo: {
+      // Also becomes the browser-tab icon, so the environment is legible even
+      // when the window is one of a dozen tabs. The two differ in shape as well
+      // as colour, so the distinction does not rest on colour vision.
+      src: isProduction ? '/admin/logo-live.svg' : '/admin/logo-test.svg',
+      show_in_header: true,
+    },
     backend: {
       name: 'github',
       repo: SITE.repo,
