@@ -59,3 +59,15 @@ jobs:
           local-dir: ./dist/
           server-dir: /public_html/
           state-name: .ftp-deploy-sync-state-production.json
+          # The staging subdomain's document root is /public_html/staging, which
+          # sits inside the directory this job syncs. Excluding it stops a
+          # production deploy from ever treating the whole staging site as
+          # extraneous files and removing it. The first four patterns are the
+          # action's own defaults, restated because naming `exclude` replaces them.
+          exclude: >-
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .ftp-deploy-sync-state-*.json
+            staging/**
+            staging/
