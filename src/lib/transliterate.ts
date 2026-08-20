@@ -29,8 +29,12 @@ const CONSONANTS: Record<string, string> = {
   य: 'y', र: 'r', ल: 'l', व: 'v', ळ: 'l',
   श: 'sh', ष: 'sh', स: 's', ह: 'h',
   // Precomposed nukta forms, mostly Perso-Arabic loans.
+  //
+  // ड़ and ढ़ are retroflex flaps, closer to an 'r' phonetically, but Hinglish
+  // convention spells them with a 'd' — बड़ा is written "bada" far more often
+  // than "bara", and तोड़कर reads as "todkar". Recognition beats precision here.
   क़: 'q', ख़: 'kh', ग़: 'g', ज़: 'z', झ़: 'zh',
-  ड़: 'r', ढ़: 'rh', फ़: 'f', य़: 'y',
+  ड़: 'd', ढ़: 'dh', फ़: 'f', य़: 'y',
 };
 
 /**
@@ -68,7 +72,7 @@ const VISARGA = 'ः';
 
 /** Nukta applied as a combining mark rather than a precomposed character. */
 const NUKTA_SHIFT: Record<string, string> = {
-  क: 'q', ख: 'kh', ग: 'g', ज: 'z', ड: 'r', ढ: 'rh', फ: 'f',
+  क: 'q', ख: 'kh', ग: 'g', ज: 'z', ड: 'd', ढ: 'dh', फ: 'f',
 };
 
 /** Labials, before which anusvara is conventionally written 'm'. */

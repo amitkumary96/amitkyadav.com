@@ -1,4 +1,5 @@
 import { getCollection, type CollectionEntry, type CollectionKey } from 'astro:content';
+import { devanagariToRoman } from './transliterate';
 import {
   SECTIONS,
   getSection,
@@ -123,6 +124,33 @@ export function slugify(input: string): string {
   return 'tag-' + hash.toString(36);
 }
 
+/** Filenames that are already web-safe and must keep the URL they have. */
+const ASCII_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * The URL a post is served at, decoupled from its filename.
+ *
+ * A CMS names the file after the title, so a Devanagari title produces a
+ * Devanagari filename — which becomes an unreadable run of %E0%A4… the moment
+ * the link is pasted anywhere, and is exposed to Unicode normalisation
+ * mismatches. (One such mismatch silently produced a duplicate post: the editor
+ * wrote तोड़ as precomposed U+095C, a rewrite used the decomposed pair, and the
+ * two filenames looked identical in a directory listing.)
+ *
+ * Rather than making the writer type a slug by hand, or letting the CMS mangle
+ * it — Sveltia's ascii encoding would strip Devanagari to nothing, and its
+ * documented fallback for non-Latin scripts is a random UUID — the URL is
+ * transliterated here, where the routing already lives.
+ *
+ * An already-ASCII filename is returned untouched, so no existing URL moves.
+ */
+function urlSlug(entry: PostEntry, title: string): string {
+  if (ASCII_SLUG.test(entry.slug)) return entry.slug;
+
+  const romanised = slugify(devanagariToRoman(title));
+  return romanised || entry.slug;
+}
+
 function toPost(entry: PostEntry, section: Section): Post {
   const { data } = entry;
 
@@ -133,11 +161,13 @@ function toPost(entry: PostEntry, section: Section): Post {
     );
   }
 
+  const slug = urlSlug(entry, data.title);
+
   return {
     entry,
     section,
-    slug: entry.slug,
-    url: `/${section.id}/${entry.slug}`,
+    slug,
+    url: `/${section.id}/${slug}`,
     title: data.title,
     date: data.date,
     excerpt: data.excerpt,
@@ -195,6 +225,23 @@ export async function getSectionPosts(sectionId: SectionId): Promise<Post[]> {
     .filter((entry) => SHOW_DRAFTS || !entry.data.draft)
     .map((entry) => toPost(entry, section))
     .sort(byDateDesc);
+
+  /**
+   * URLs are derived from titles, so two posts whose titles transliterate to the
+   * same slug would generate the same page and one would silently overwrite the
+   * other. Caught here rather than discovered as a missing post.
+   */
+  const seen = new Map<string, string>();
+  for (const post of posts) {
+    const clash = seen.get(post.slug);
+    if (clash) {
+      throw new Error(
+        `Two posts in "${sectionId}" resolve to the same URL /${sectionId}/${post.slug}: ` +
+          `"${clash}" and "${post.title}". Change one of the titles.`,
+      );
+    }
+    seen.set(post.slug, post.title);
+  }
 
   sectionCache.set(sectionId, posts);
   return posts;
