@@ -123,6 +123,16 @@ const CMS_SCRIPT = 'https://unpkg.com/@sveltia/cms@~0.193.1/dist/sveltia-cms.js'
           const CMS = window.CMS;
           if (!CMS || typeof CMS.registerEditorComponent !== 'function') return false;
 
+          /**
+           * The preview pane renders in its own iframe, so none of the site's CSS
+           * reaches it. Without this it uses the browser's default serif at
+           * default sizes, which is most of why the editor felt like a form
+           * rather than part of the site.
+           */
+          if (typeof CMS.registerPreviewStyle === 'function') {
+            CMS.registerPreviewStyle('/admin/preview.css');
+          }
+
           CMS.registerEditorComponent({
             id: 'video',
             label: 'Video (YouTube)',

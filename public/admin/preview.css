@@ -1,0 +1,194 @@
+/**
+ * Styles for the editor's preview pane.
+ *
+ * Registered via CMS.registerPreviewStyle. The pane renders in its own iframe, so
+ * none of the site's stylesheet reaches it — without this it renders in the
+ * browser's default serif at default sizes, which is what made the editor feel
+ * like a form rather than part of the site.
+ *
+ * The three faces are copied into /admin/fonts/ with stable names rather than
+ * referenced from the site build, whose filenames are content-hashed and change
+ * on every deploy. They ship only to staging: the whole /admin directory is
+ * stripped from a production build.
+ */
+
+@font-face {
+  font-family: 'Literata Preview';
+  src: url('/admin/fonts/literata.woff2') format('woff2-variations');
+  font-weight: 200 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Devanagari Preview';
+  src: url('/admin/fonts/devanagari.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Plex Preview';
+  src: url('/admin/fonts/plex-sans.woff2') format('woff2-variations');
+  font-weight: 100 700;
+  font-display: swap;
+}
+
+:root {
+  --paper: #fbfaf8;
+  --surface: #f2f0ec;
+  --ink: #16161d;
+  --ink-soft: #52525f;
+  --ink-faint: #85838f;
+  --rule: #e2ded8;
+  --rule-firm: #c9c4bc;
+  --madder: #a32e33;
+  --madder-ink: #7e2226;
+
+  --serif: 'Literata Preview', 'Devanagari Preview', Georgia, serif;
+  --deva: 'Devanagari Preview', 'Literata Preview', 'Nirmala UI', serif;
+  --sans: 'Plex Preview', system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #141419;
+    --surface: #1c1c23;
+    --ink: #edeae4;
+    --ink-soft: #a6a3ae;
+    --ink-faint: #78757f;
+    --rule: #2c2c36;
+    --rule-firm: #3d3d49;
+    --madder: #e4757a;
+    --madder-ink: #f0989c;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 2.5rem 2rem 4rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The default preview lists each field with its label. Turn those labels into
+   the site's own eyebrow style so the pane reads as a document, not a data dump. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--serif);
+  color: var(--ink);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: 1.9rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  margin: 0 0 0.6rem;
+}
+
+h2,
+h3 {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--madder);
+  margin: 2rem 0 0.4rem;
+}
+
+p {
+  max-width: 34rem;
+  margin: 0 0 1rem;
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--madder-ink);
+  text-underline-offset: 0.18em;
+}
+
+blockquote {
+  margin: 1.5rem 0;
+  padding-left: 1.1rem;
+  border-left: 2px solid var(--madder);
+  color: var(--ink);
+  font-style: italic;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 2rem 0;
+}
+
+ul,
+ol {
+  max-width: 34rem;
+  padding-left: 1.3rem;
+  color: var(--ink-soft);
+}
+
+li {
+  margin: 0.2rem 0;
+}
+
+code {
+  font-family: 'Cascadia Code', Consolas, ui-monospace, monospace;
+  font-size: 0.86em;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 0.1em 0.34em;
+}
+
+pre {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+}
+
+pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+table {
+  border-collapse: collapse;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--rule);
+  padding: 0.4rem 0.8rem 0.4rem 0;
+  text-align: left;
+}
+
+/* Devanagari needs its own face and more room between lines. Matched exactly
+   rather than with :lang(hi), which would also capture hi-Latn — Hinglish in
+   Latin script, which wants none of it. */
+[lang='hi'] {
+  font-family: var(--deva);
+  line-height: 1.95;
+}

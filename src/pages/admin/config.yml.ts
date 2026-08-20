@@ -41,10 +41,24 @@ const FORMAT_OPTIONS = [
   { label: 'Verse - keeps the line breaks you type', value: 'verse' },
 ];
 
-/** Mirrors the Zod schema in src/content/config.ts, field for field. */
+/**
+ * Mirrors the Zod schema in src/content/config.ts, field for field.
+ *
+ * Order is writing order, not schema order. The first version listed every
+ * metadata field before the body, which buried the actual rich text editor under
+ * ten form controls — you had to scroll past Draft, Tags, Format, Language,
+ * Cover and Audio before you could type a word. Title then Content now come
+ * first, and everything else follows.
+ */
 function fieldsFor(section: Section): CmsField[] {
   return [
     { name: 'title', label: 'Title', widget: 'string', required: true },
+    {
+      // Second, because this is where the writing happens.
+      name: 'body',
+      label: 'Content',
+      widget: 'markdown',
+    },
     {
       name: 'date',
       label: 'Date',
@@ -129,7 +143,6 @@ function fieldsFor(section: Section): CmsField[] {
         },
       ],
     },
-    { name: 'body', label: 'Content', widget: 'markdown' },
   ];
 }
 
