@@ -58,6 +58,10 @@ function fieldsFor(section: Section): CmsField[] {
       name: 'body',
       label: 'Content',
       widget: 'markdown',
+      hint:
+        section.defaultFormat === 'verse'
+          ? 'Enter starts a new stanza. Shift+Enter starts a new line within the same stanza — that is the distinction verse needs.'
+          : undefined,
     },
     {
       name: 'date',
@@ -78,8 +82,16 @@ function fieldsFor(section: Section): CmsField[] {
       name: 'draft',
       label: 'Draft',
       widget: 'boolean',
-      default: true,
-      hint: 'On by default. A draft appears on staging only and is never indexed.',
+      /**
+       * False, not true. A CMS applies a field default whenever the key is absent
+       * from the file — so opening a published post that predates this field and
+       * pressing Save silently unpublished it. That happened to "Rat aur Tum".
+       *
+       * Accidentally publishing is the safer failure of the two: it reaches
+       * staging only, and production needs a separate deliberate promotion.
+       */
+      default: false,
+      hint: 'Tick while a piece is unfinished. Drafts appear on staging only and are never indexed.',
     },
     {
       name: 'tags',

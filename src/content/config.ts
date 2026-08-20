@@ -9,6 +9,23 @@ import { SECTION_IDS } from '../config/site';
  * A typo in a field name failed silently — the post just disappeared from a
  * listing with no error. Everything below now fails the build instead.
  */
+/**
+ * Treats an empty or whitespace-only value as absent.
+ *
+ * A CMS renders every optional field as a control, and a control that has never
+ * been filled in writes an empty string rather than omitting the key. Sveltia's
+ * `omit_empty_optional_fields` is meant to prevent that; it did not, and because
+ * the schema rejected `audio: ''` and `cover: ''` the editor produced files its
+ * own site refused to build — with the failure only visible in CI logs.
+ *
+ * Tolerating empty here means no editor, present or future, can write frontmatter
+ * that breaks the build simply by leaving a field alone.
+ */
+const blankAsUndefined = (value: unknown) =>
+  typeof value === 'string' && value.trim() === '' ? undefined : (value ?? undefined);
+
+const optionalString = () => z.preprocess(blankAsUndefined, z.string().optional());
+
 const postSchema = ({ image }: { image: () => z.ZodType }) =>
   z
     .object({
@@ -18,7 +35,7 @@ const postSchema = ({ image }: { image: () => z.ZodType }) =>
       date: z.coerce.date(),
 
       /** Used on cards, in feeds, and as the meta description. */
-      excerpt: z.string().optional(),
+      excerpt: optionalString(),
 
       tags: z.array(z.string().min(1)).default([]),
 
@@ -39,16 +56,19 @@ const postSchema = ({ image }: { image: () => z.ZodType }) =>
       lang: z.enum(['hi', 'hi-Latn', 'en']).optional(),
 
       /** Optimised at build time into WebP/AVIF with a responsive srcset. */
-      cover: image().optional(),
-      coverAlt: z.string().optional(),
+      cover: z.preprocess(blankAsUndefined, image().optional()),
+      coverAlt: optionalString(),
 
       /**
        * Path to a recitation, relative to the site root — e.g.
        * `/audio/rat-aur-tum.mp3`. Audio is served as-is rather than processed,
        * so these live in public/audio/.
        */
-      audio: z.string().startsWith('/', 'audio must be a site-root path').optional(),
-      audioLabel: z.string().optional(),
+      audio: z.preprocess(
+        blankAsUndefined,
+        z.string().startsWith('/', 'audio must be a site-root path').optional(),
+      ),
+      audioLabel: optionalString(),
 
       /**
        * Groups posts into an ordered sequence — a story in chapters, or a
