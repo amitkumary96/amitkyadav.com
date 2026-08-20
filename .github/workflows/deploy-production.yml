@@ -11,6 +11,10 @@ on:
   push:
     branches:
       - master
+  # Manual retry. An FTP transfer that dies partway leaves the site half-updated,
+  # and the fix is simply to run it again — which needed a trigger that did not
+  # depend on inventing a commit.
+  workflow_dispatch:
   workflow_call:
     inputs:
       ref:
@@ -85,10 +89,20 @@ jobs:
           # production deploy from ever treating the whole staging site as
           # extraneous files and removing it. The first four patterns are the
           # action's own defaults, restated because naming `exclude` replaces them.
-          exclude: >-
+          #
+          # A literal block (|-), not a folded one (>-). Folded YAML joins these
+          # onto a single line, and the action splits its patterns on newlines —
+          # so as originally written the whole list became one meaningless glob
+          # and nothing was actually excluded.
+          exclude: |-
             **/.git*
             **/.git*/**
             **/node_modules/**
             .ftp-deploy-sync-state-*.json
             staging/**
             staging/
+          # An interrupted transfer is the failure mode seen in practice, twice.
+          # A longer per-operation timeout gives a slow or briefly unhappy server
+          # room to finish rather than dropping the deploy halfway and leaving
+          # empty directories serving 403.
+          timeout: 120000
