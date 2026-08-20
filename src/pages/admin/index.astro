@@ -57,6 +57,20 @@ const CMS_SCRIPT = 'https://unpkg.com/@sveltia/cms@~0.193.1/dist/sveltia-cms.js'
         padding: 1.5rem;
       }
 
+      #boot .boot-warn {
+        max-width: 30rem;
+        padding: 0.6rem 0.9rem;
+        border: 1px solid #a32e33;
+        border-radius: 2px;
+        background: #f5e9e8;
+        color: #7e2226;
+      }
+
+      #boot p {
+        max-width: 32rem;
+        margin: 0;
+      }
+
       #boot code {
         font-size: 0.85em;
         background: #f2f0ec;
@@ -69,11 +83,23 @@ const CMS_SCRIPT = 'https://unpkg.com/@sveltia/cms@~0.193.1/dist/sveltia-cms.js'
   <body>
     <div id="boot">
       <p><strong>Loading the editor…</strong></p>
+
+      <p class="boot-warn">
+        Use <strong>“Sign In with Token”</strong> — not “Login with GitHub”.
+      </p>
+
       <p>
-        Sign in with a GitHub personal access token scoped to
-        <code>{SITE.repo}</code>. Everything you save commits to
+        The GitHub button routes through Netlify's OAuth service, which this site
+        does not use, so it returns <em>Not Found</em>. Token sign-in needs no
+        server at all, which is the whole reason the editor can run here.
+      </p>
+
+      <p>
+        The token needs <strong>Contents: Read and write</strong> on
+        <code>{SITE.repo}</code> and nothing else. Everything you save commits to
         <code>staging</code>.
       </p>
+
       <noscript>
         <p>This editor needs JavaScript.</p>
       </noscript>

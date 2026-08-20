@@ -145,9 +145,14 @@ banner.
 <https://staging.amitkyadav.com/admin>
 
 Sveltia CMS, a static single-page app that talks straight to the GitHub API.
-Sign in with a **fine-grained personal access token** scoped to this repository —
-there is no OAuth app and no proxy server, which is the only reason a
-browser-based editor can run on static hosting at all.
+
+**Press "Sign In with Token", not "Login with GitHub".** The GitHub button uses
+Netlify's OAuth broker, which this site is not registered with, so it returns
+`Not Found`. Token sign-in needs no OAuth app and no proxy server, which is the
+only reason a browser-based editor can run on static hosting at all.
+
+The token is a **fine-grained personal access token** with **Contents: Read and
+write** on this repository and nothing else. It is stored in your browser.
 
 Every save is a commit to `staging`, so the staging site reflects it in about
 ninety seconds. Nothing written here can reach the live site by accident.
