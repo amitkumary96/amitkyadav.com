@@ -29,15 +29,46 @@ const optionalString = () => z.preprocess(blankAsUndefined, z.string().optional(
 const postSchema = ({ image }: { image: () => z.ZodType }) =>
   z
     .object({
-      title: z.string().min(1, 'title cannot be empty'),
+      title: z.string().min(1, 'This post needs a title.'),
 
-      /** Accepts `2026-08-19` or a full ISO timestamp. */
-      date: z.coerce.date(),
+      /**
+       * Accepts `2026-08-19` or a full ISO timestamp.
+       *
+       * Validated as a string and then converted, rather than with z.coerce.date.
+       * Astro replaces Zod's messages for *type* errors with its own — a cleared
+       * date reported only as "Invalid date", which tells a writer nothing — but
+       * it passes *refinement* messages straight through. So the checks below are
+       * deliberately refinements on a string.
+       *
+       * YAML parses an unquoted `2026-08-19` into a Date before Zod sees it,
+       * hence the round trip back to a string first.
+       */
+      date: z.preprocess(
+        (value) => (value instanceof Date ? value.toISOString() : value),
+        z
+          .string()
+          .min(1, 'This post needs a date, e.g. 2026-08-19.')
+          .refine((value) => !Number.isNaN(new Date(value).getTime()), {
+            message: 'That date could not be read. Use the form 2026-08-19.',
+          })
+          .transform((value) => new Date(value)),
+      ),
 
       /** Used on cards, in feeds, and as the meta description. */
       excerpt: optionalString(),
 
-      tags: z.array(z.string().min(1)).default([]),
+      /**
+       * Blank rows are dropped rather than rejected. A CMS list widget adds an
+       * empty row the moment you click "add", so leaving one behind would
+       * otherwise fail the build over a stray click.
+       */
+      tags: z.preprocess(
+        (value) =>
+          Array.isArray(value)
+            ? value.filter((tag) => typeof tag === 'string' && tag.trim() !== '')
+            : (value ?? []),
+        z.array(z.string()).default([]),
+      ),
 
       /**
        * Draft posts are excluded from every listing, feed and sitemap on a
@@ -49,11 +80,15 @@ const postSchema = ({ image }: { image: () => z.ZodType }) =>
       /**
        * `verse` preserves line breaks and stanza spacing. Omit it and the
        * section's own default applies — poems are verse unless told otherwise.
+       *
+       * Blank-tolerant like the rest: a select the editor rendered but nobody
+       * chose from writes an empty string, and falling back to the section
+       * default is more useful than refusing to build.
        */
-      format: z.enum(['prose', 'verse']).optional(),
+      format: z.preprocess(blankAsUndefined, z.enum(['prose', 'verse']).optional()),
 
       /** Omit and the section default applies. See PostLang in config/site.ts. */
-      lang: z.enum(['hi', 'hi-Latn', 'en']).optional(),
+      lang: z.preprocess(blankAsUndefined, z.enum(['hi', 'hi-Latn', 'en']).optional()),
 
       /** Optimised at build time into WebP/AVIF with a responsive srcset. */
       cover: z.preprocess(blankAsUndefined, image().optional()),
@@ -66,7 +101,10 @@ const postSchema = ({ image }: { image: () => z.ZodType }) =>
        */
       audio: z.preprocess(
         blankAsUndefined,
-        z.string().startsWith('/', 'audio must be a site-root path').optional(),
+        z
+          .string()
+          .startsWith('/', 'The recitation path must start with / — e.g. /audio/poem.mp3.')
+          .optional(),
       ),
       audioLabel: optionalString(),
 
@@ -84,12 +122,30 @@ const postSchema = ({ image }: { image: () => z.ZodType }) =>
           if (!value || typeof value !== 'object') return value ?? undefined;
           const candidate = value as { name?: unknown; order?: unknown };
           const hasName = typeof candidate.name === 'string' && candidate.name.trim() !== '';
-          return hasName ? value : undefined;
+          if (!hasName) return undefined;
+
+          /**
+           * A missing or unreadable part number becomes 0, which the `positive`
+           * refinement below rejects with a message a writer can act on. Left as
+           * null it would surface only as Astro's own 'Expected type "number",
+           * received "null"'.
+           */
+          const order = Number(candidate.order);
+          return { ...candidate, order: Number.isFinite(order) ? order : 0 };
         },
         z
           .object({
             name: z.string().min(1),
-            order: z.number().int().positive(),
+            /**
+             * Deliberately still an error rather than a tolerated blank. A part
+             * with no position would sort arbitrarily among its siblings, and a
+             * story whose chapters shuffle is worse than a build that stops and
+             * says so.
+             */
+            order: z
+              .number()
+              .int('The series part number must be a whole number.')
+              .positive('This post names a series but has no part number. Add one — parts with no position would shuffle.'),
           })
           .optional(),
       ),
@@ -99,7 +155,8 @@ const postSchema = ({ image }: { image: () => z.ZodType }) =>
      * reader, so this is a build error rather than a lint warning.
      */
     .refine((data) => !data.cover || Boolean(data.coverAlt?.trim()), {
-      message: 'coverAlt is required whenever cover is set',
+      message:
+        'This post has a cover image but no description. Add one in "Cover description" — without it the image is invisible to anyone using a screen reader.',
       path: ['coverAlt'],
     });
 

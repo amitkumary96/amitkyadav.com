@@ -27,6 +27,8 @@ jobs:
         run: npm ci
 
       - name: Build
+        id: build
+        shell: bash
         env:
           # Without this the staging build advertises production canonicals and
           # omits noindex — and because the subdomain's document root sits inside
@@ -36,7 +38,35 @@ jobs:
           # Staging is the writing desk: show unfinished work here. Draft pages
           # are noindex regardless and stay out of the sitemap and feed.
           SHOW_DRAFTS: 'true'
-        run: npm run build
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee build.log
+
+      # A failed build means the site was not rebuilt, so it silently keeps
+      # serving the previous version. That is the correct behaviour — a broken
+      # post must never reach the site — but it used to leave no trace anywhere
+      # a writer would look. This turns the failure into a readable explanation
+      # on the run page, which is what the failure email links to.
+      - name: Explain what went wrong
+        if: failure() && steps.build.outcome == 'failure'
+        shell: bash
+        run: |
+          {
+            echo "## This change was not published"
+            echo
+            echo "The site was not rebuilt, so it still shows the previous version."
+            echo "**Nothing is lost.** Your writing is saved — fix the point below and press Save again."
+            echo
+            echo "### What the build objected to"
+            echo
+            echo '```'
+            grep -iE "does not match collection schema|InvalidContent|^[A-Za-z].*(needs a|must (start|be)|is not in|required|invalid)" build.log \
+              | grep -viE "^npm|^>" | sort -u | head -15 || tail -25 build.log
+            echo '```'
+            echo
+            echo "Most causes are a field left half-filled — a cover image with no description,"
+            echo "a series part with no number, or a recitation path that does not point at a real file."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Deploy to Hostinger (staging)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4

@@ -42,11 +42,32 @@ jobs:
         run: npm ci
 
       - name: Build
+        id: build
+        shell: bash
         env:
           # Stated explicitly rather than relying on the default, so the two
           # workflows can be read side by side and the difference is obvious.
           SITE_URL: https://amitkyadav.com
-        run: npm run build
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee build.log
+
+      # Same reasoning as the staging workflow: a failed build leaves the live
+      # site serving the previous version with no trace a writer would find.
+      - name: Explain what went wrong
+        if: failure() && steps.build.outcome == 'failure'
+        shell: bash
+        run: |
+          {
+            echo "## Production was not updated"
+            echo
+            echo "The build failed, so the live site still shows the previous version."
+            echo "**Nothing is lost.** Fix the point below and publish again."
+            echo
+            echo '```'
+            grep -iE "does not match collection schema|InvalidContent|^[A-Za-z].*(needs a|must (start|be)|is not in|required|invalid)" build.log               | grep -viE "^npm|^>" | sort -u | head -15 || tail -25 build.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Deploy to Hostinger (production)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
