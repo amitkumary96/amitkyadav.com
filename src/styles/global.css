@@ -152,6 +152,11 @@
 
 .article-measure {
   max-width: var(--measure, 36rem);
+  /* Centred here rather than by an mx-auto at each call site. Only the post
+     layout had it, so every other page — home, archive, search, tags, section
+     listings — rendered flush-left inside the wider centred shell, leaving a
+     column of dead space on the right that read as an unfinished layout. */
+  margin-inline: auto;
 }
 
 /* Themes @tailwindcss/typography through its own custom properties, so all the

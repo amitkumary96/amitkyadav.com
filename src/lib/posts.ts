@@ -375,6 +375,28 @@ export async function getSectionItems(sectionId: SectionId): Promise<SectionItem
   return items.sort((a, b) => b.date.getTime() - a.date.getTime());
 }
 
+/**
+ * The opening lines of a post's body, for quoting on the homepage.
+ *
+ * Deliberately crude: it strips the few markdown constructs that could plausibly
+ * appear at the start of a poem and stops there. This quotes verse, it does not
+ * render markdown — anything more elaborate belongs in the renderer.
+ */
+export function openingLines(post: Post, count = 2): string[] {
+  return post.entry.body
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith('#') && !line.startsWith('<'))
+    .slice(0, count)
+    .map((line) =>
+      line
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
+        .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+        .replace(/`/g, ''),
+    );
+}
+
 export interface Adjacent {
   readonly previous?: Post;
   readonly next?: Post;

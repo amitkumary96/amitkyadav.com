@@ -1,115 +1,157 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import PostCard from '../components/PostCard.astro';
-import { SECTIONS, SITE } from '../config/site';
-import { formatDateShort, getAllPosts, getLatestPerSection, isoDate } from '../lib/posts';
+import { SECTIONS } from '../config/site';
+import {
+  formatDateShort,
+  getAllPosts,
+  getLatestPerSection,
+  getSectionPosts,
+  isoDate,
+  openingLines,
+} from '../lib/posts';
 
 export const prerender = true;
 
-const posts = await getAllPosts();
-const [featured, ...rest] = posts;
-const recent = rest.slice(0, 4);
+/**
+ * The homepage leads with a couplet, not a biography.
+ *
+ * It used to open with the site title as an h1 — the same string as the header
+ * logo, 150 pixels above it — at the largest type size on the page. So the most
+ * confident thing on the site was information the visitor already had, and a
+ * screenful showed one post.
+ *
+ * Now the newest poem's opening lines carry the hero. It borrows its composition
+ * from the generated share cards: accent rule, eyebrow, then the words. The point
+ * is that this is a place where someone writes, and that is specific to Amit in a
+ * way a centred column never is.
+ */
+/**
+ * Drafts are excluded from the hero even on staging, where they are otherwise
+ * visible. The hero is a showcase, and the newest poem on staging is a test
+ * fixture — quoting "this is not a poem, only a fixture" in display type would
+ * make every review of the design misleading.
+ */
+const poems = (await getSectionPosts('poet')).filter((poem) => !poem.draft);
+const featuredPoem = poems[0];
+const couplet = featuredPoem ? openingLines(featuredPoem, 2) : [];
+
+/** Dense and scannable: the hero supplies the feeling, this supplies the map. */
+const recent = (await getAllPosts()).slice(0, 6);
 const latestPerSection = await getLatestPerSection();
 ---
 
 <BaseLayout>
   <div class="register-literary">
-    <section class="article-measure">
-      <h1
-        class="font-serif text-[clamp(2rem,1.4rem+2.6vw,3rem)] font-semibold leading-[1.08] -tracking-[0.015em]"
-      >
-        {SITE.title}
-      </h1>
-      <p class="mt-4 text-[1.15rem] leading-relaxed text-ink-soft">
-        Senior QA engineer by trade. I write about testing, automation and AI on
-        one side of this site, and Hindi and Hinglish verse and stories on the
-        other. Both halves are me.
-      </p>
-    </section>
-
     {
-      featured && (
-        <section class="mt-14 border-t border-rule-firm pt-8" aria-labelledby="latest-heading">
-          <h2 id="latest-heading" class="label label-accent mb-5">
-            Most recent
-          </h2>
+      couplet.length > 0 && featuredPoem && (
+        <section class="article-measure" aria-labelledby="couplet-heading">
+          <div class="mb-6 h-[3px] w-16 bg-madder" aria-hidden="true"></div>
 
-          <a href={featured.url} class="group block no-underline">
-            <p class="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span class="label label-accent">{featured.section.label}</span>
-              <time class="meta" datetime={isoDate(featured.date)}>
-                {formatDateShort(featured.date)}
-              </time>
-            </p>
+          <p id="couplet-heading" class="label label-accent mb-6">
+            {featuredPoem.section.label}
+            {featuredPoem.section.native && (
+              <span lang="hi" class="font-deva"> · {featuredPoem.section.native}</span>
+            )}
+          </p>
 
-            <h3
-              lang={featured.lang}
-              class:list={[
-                'text-[clamp(1.6rem,1.2rem+1.6vw,2.2rem)] leading-[1.15] transition-colors group-hover:text-madder-ink',
-                featured.section.register === 'workshop'
-                  ? 'font-sans font-bold tracking-tight'
-                  : 'font-serif font-semibold',
-              ]}
-            >
-              {featured.title}
-            </h3>
+          <blockquote
+            lang={featuredPoem.lang}
+            class:list={[
+              'font-semibold text-ink',
+              featuredPoem.lang === 'hi' ? 'font-deva' : 'font-serif',
+            ]}
+            style="font-size: clamp(1.6rem, 1.1rem + 2.4vw, 2.6rem); line-height: 1.5;"
+          >
+            {couplet.map((line) => <span class="block">{line}</span>)}
+          </blockquote>
 
-            {
-              featured.excerpt && (
-                <p lang={featured.lang} class="mt-3 max-w-[50ch] text-ink-soft">
-                  {featured.excerpt}
-                </p>
-              )
-            }
-
-            <span class="label mt-4 inline-block text-madder-ink">Read it →</span>
-          </a>
-        </section>
-      )
-    }
-
-    {
-      recent.length > 0 && (
-        <section class="mt-14" aria-labelledby="recent-heading">
-          <h2 id="recent-heading" class="label mb-6 border-t border-rule pt-8">
-            Also recently
-          </h2>
-          <div class="flex flex-col gap-7">
-            {recent.map((post) => (
-              <PostCard post={post} showSection />
-            ))}
-          </div>
-        </section>
-      )
-    }
-
-    {
-      posts.length === 0 && (
-        <section class="mt-14 border-t border-rule pt-8">
-          <p class="text-ink-soft">
-            Nothing published yet. The first pieces are on their way.
+          <p class="mt-6">
+            <a href={featuredPoem.url} class="label text-madder-ink no-underline">
+              — {featuredPoem.title} →
+            </a>
           </p>
         </section>
       )
     }
 
-    <section class="mt-16 border-t border-rule-firm pt-8" aria-labelledby="sections-heading">
+    <section
+      class:list={[
+        'article-measure',
+        couplet.length > 0 ? 'mt-16 border-t border-rule pt-10' : '',
+      ]}
+    >
+      <h1 class="font-serif text-[1.6rem] font-semibold leading-snug -tracking-[0.012em]">
+        Engineering notes, Hindi verse, and stories
+      </h1>
+      <p class="mt-3 text-ink-soft">
+        Senior QA engineer by trade. I write about testing, automation and AI on one
+        side of this site, and Hindi and Hinglish verse and stories on the other.
+        Both halves are me.
+      </p>
+    </section>
+
+    {
+      recent.length > 0 && (
+        <section class="article-measure mt-14" aria-labelledby="recent-heading">
+          <h2 id="recent-heading" class="label mb-1 border-b border-rule-firm pb-2">
+            Recently
+          </h2>
+
+          <ul class="flex flex-col">
+            {recent.map((post) => (
+              <li class="border-b border-rule last:border-0">
+                <a
+                  href={post.url}
+                  class="group flex flex-wrap items-baseline gap-x-4 gap-y-1 py-3.5 no-underline"
+                >
+                  <time class="meta w-[5.5rem] shrink-0" datetime={isoDate(post.date)}>
+                    {formatDateShort(post.date)}
+                  </time>
+
+                  <span
+                    lang={post.lang}
+                    class="min-w-0 flex-1 text-ink transition-colors group-hover:text-madder-ink"
+                  >
+                    {post.title}
+                  </span>
+
+                  <span class="label shrink-0">{post.section.label}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+
+          <p class="mt-6">
+            <a href="/archive" class="label text-madder-ink no-underline">
+              Everything, by year →
+            </a>
+          </p>
+        </section>
+      )
+    }
+
+    {
+      recent.length === 0 && (
+        <section class="article-measure mt-14 border-t border-rule pt-8">
+          <p class="text-ink-soft">Nothing published yet. The first pieces are on their way.</p>
+        </section>
+      )
+    }
+
+    <section class="article-measure mt-16 border-t border-rule-firm pt-8" aria-labelledby="sections-heading">
       <h2 id="sections-heading" class="label mb-6">Four things I write</h2>
 
-      <ul class="grid gap-px overflow-hidden rounded-sm bg-rule sm:grid-cols-2">
+      <ul class="flex flex-col">
         {
           SECTIONS.map((section) => {
             const latest = latestPerSection.get(section.id);
             return (
-              <li class="bg-paper">
-                <a
-                  href={`/${section.id}`}
-                  class="group flex h-full flex-col gap-2 p-5 no-underline transition-colors hover:bg-surface"
-                >
+              <li class="border-b border-rule last:border-0">
+                <a href={`/${section.id}`} class="group block py-4 no-underline">
                   <span class="flex items-baseline gap-2.5">
                     <span
                       class:list={[
-                        'text-[1.15rem] font-semibold text-ink transition-colors group-hover:text-madder-ink',
+                        'font-semibold text-ink transition-colors group-hover:text-madder-ink',
                         section.register === 'workshop' ? 'font-sans' : 'font-serif',
                       ]}
                     >
@@ -122,11 +164,11 @@ const latestPerSection = await getLatestPerSection();
                     )}
                   </span>
 
-                  <span class="text-[0.95rem] leading-snug text-ink-soft">
+                  <span class="mt-1 block text-[0.97rem] leading-snug text-ink-soft">
                     {section.blurb}
                   </span>
 
-                  <span class="meta mt-auto pt-2">
+                  <span class="meta mt-1.5 block">
                     {latest ? `Latest: ${latest.title}` : 'Nothing published yet'}
                   </span>
                 </a>
