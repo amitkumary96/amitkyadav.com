@@ -1,15 +1,20 @@
-name: Publish to Production
+name: Promote Staging to Production
 
-# The one-tap publish. Open Actions in the GitHub mobile app, pick this workflow,
-# Run workflow. It fast-forwards master to staging and deploys.
+# Moves code and design changes from staging into master, then deploys.
 #
-# Fast-forward only on purpose: if master has moved independently the merge fails
-# rather than inventing a merge commit, and tells you to reconcile first.
+# Content does not travel this way. Content is written in the production editor
+# and commits straight to master, so master is the trunk: it always holds the
+# live writing. staging is a working branch for code, taken from master and
+# merged back.
+#
+# That is why this merges rather than fast-forwards. master legitimately moves on
+# its own every time a post is written, so staging is almost never a direct
+# descendant of it, and demanding a fast-forward would fail constantly.
 on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: List what would be published, then stop
+        description: List what would be promoted, then stop
         required: false
         default: false
         type: boolean
@@ -32,8 +37,9 @@ jobs:
           ref: master
           fetch-depth: 0
 
-      - name: Fast-forward master to staging
+      - name: Merge staging into master
         id: merge
+        shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -43,14 +49,17 @@ jobs:
           pending="$(git log --oneline master..origin/staging)"
           if [ -z "$pending" ]; then
             echo "promoted=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Nothing to publish — master already matches staging."
+            echo "::notice::Nothing to promote — master already contains everything on staging."
             exit 0
           fi
 
-          echo "### Publishing to amitkyadav.com" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "$pending" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### Promoting to amitkyadav.com"
+            echo
+            echo '```'
+            echo "$pending"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "promoted=false" >> "$GITHUB_OUTPUT"
@@ -58,7 +67,24 @@ jobs:
             exit 0
           fi
 
-          git merge --ff-only origin/staging
+          # --no-ff keeps a single, findable commit for each promotion, so the
+          # history reads as a series of releases rather than interleaved work.
+          if ! git merge --no-ff --no-edit -m "release: promote staging to production" origin/staging; then
+            {
+              echo "### Promotion stopped on a conflict"
+              echo
+              echo "The same file was changed on both branches. Nothing was published."
+              echo "Resolve it locally, then run this again:"
+              echo
+              echo '```'
+              echo "git checkout master && git pull"
+              echo "git merge origin/staging   # fix the conflicts it reports"
+              echo "git push origin master"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
           git push origin master
           echo "promoted=true" >> "$GITHUB_OUTPUT"
 

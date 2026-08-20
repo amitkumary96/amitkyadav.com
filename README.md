@@ -140,69 +140,64 @@ banner.
 
 ## Editing
 
-### From anywhere, including a phone
+### Where to write
 
-<https://staging.amitkyadav.com/admin>
+| | Editor | Writes to | Appears on |
+| --- | --- | --- | --- |
+| **Live** | <https://amitkyadav.com/admin> | `master` | the public site, ~2 min |
+| **Test** | <https://staging.amitkyadav.com/admin> | `staging` | staging only |
 
-Sveltia CMS, a static single-page app that talks straight to the GitHub API.
+**Write real posts in the live editor.** Content is not something staging reviews —
+it goes straight to the public site, which is the point.
+
+The staging editor exists so that after a code or design change you can check the
+CMS itself still works, without touching live writing.
+
+The two look identical, so each shows a coloured bar at the top: **red LIVE SITE**
+or **grey TEST SITE**, with the branch it saves to. Check it before you type.
+
+### Signing in
 
 **Press "Sign In with Token", not "Login with GitHub".** The GitHub button uses
 Netlify's OAuth broker, which this site is not registered with, so it returns
 `Not Found`. Token sign-in needs no OAuth app and no proxy server, which is the
-only reason a browser-based editor can run on static hosting at all.
+only reason a browser-based editor can run on static hosting.
 
 The token is a **fine-grained personal access token** with **Contents: Read and
 write** on this repository and nothing else. It is stored in your browser.
-
-Every save is a commit to `staging`, so the staging site reflects it in about
-ninety seconds. Nothing written here can reach the live site by accident.
-
-The editor exists on staging only: `astro.config.mjs` strips `/admin` from a
-production build, so there is one place to write and no ambiguity about which
-branch is being edited.
-
-Its configuration is generated at `/admin/config.yml` from `SECTIONS`, so the
-editor cannot drift out of sync with the site — adding a section updates both in
-the same commit.
 
 In `.mdx` sections the toolbar offers **Insert → Video** and **Insert → Callout**
 alongside the built-in code block and image. Poetry is `.md`, so it gets images
 and frontmatter media instead; a component tag in a `.md` file would render as
 literal text.
 
-### Publishing
+In verse, **Enter starts a new stanza and Shift+Enter starts a new line.**
 
-GitHub → Actions → **Publish to Production** → Run workflow. It fast-forwards
-`master` to `staging` and deploys. Fast-forward only, so if `master` has moved
-independently the run fails and asks you to reconcile rather than inventing a
-merge commit. Tick `dry_run` to see what would be published without doing it.
+### Changing the code or design
+
+`master` is the trunk — it always holds the live writing, because the production
+editor commits to it. `staging` is a working branch for code.
+
+1. **Actions → Sync Staging from Production.** Brings staging up to date with the
+   live content, so you test a change against what is really there.
+2. Push your changes to `staging`. They appear at staging.amitkyadav.com.
+3. Check it, including `/admin` if the change could affect the editor.
+4. **Actions → Promote Staging to Production.** Merges staging into master and
+   deploys. Tick `dry_run` first to see what would move.
+
+This merges rather than fast-forwards, because master moves on its own every time
+a post is written and would almost never be a direct ancestor of staging.
 
 ### On this machine
 
 `npm run dev`, then <http://localhost:3000/keystatic>. Kept as a fallback. It
 cannot create nested folders — those are added by hand.
 
-## Environments
+### If a change does not appear
 
-| | Branch | URL | Behaviour |
-| --- | --- | --- | --- |
-| Staging | `staging` | staging.amitkyadav.com | Shows drafts, `noindex` on every page |
-| Production | `master` | amitkyadav.com | Published posts only |
-
-Both deploy over FTPS to Hostinger via GitHub Actions. The build reads two
-variables:
-
-- `SITE_URL` — the canonical origin. Any value other than
-  `https://amitkyadav.com` marks every page `noindex` and empties the sitemap
-  and feed. This matters because the staging subdomain's document root sits
-  inside `public_html`, so the same pages also answer at
-  `amitkyadav.com/staging/`.
-- `SHOW_DRAFTS` — `true` on staging only.
-
-Repository secrets required: `FTP_HOST`, `FTP_USERNAME`, `FTP_PASSWORD`.
-
-Workflow: write on `staging`, review at staging.amitkyadav.com, then merge to
-`master` to publish.
+A failed build leaves the previous version serving, on purpose — a broken post
+must never reach the site. Open **Actions**: a red run explains which field to fix
+and confirms nothing was lost.
 
 ## Layout
 

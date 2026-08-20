@@ -11,13 +11,14 @@ export const prerender = true;
  *   - No server. Sign-in is a fine-grained personal access token pasted once, so
  *     there is no OAuth app and no proxy to host — which is the only reason a
  *     browser-based CMS can run on static hosting at all.
- *   - It commits to `staging`, never to `master`. Publishing is a separate
- *     one-tap workflow, so nothing written here can reach the live site by
- *     accident.
- *   - astro.config.mjs strips /admin from a production build, so this page
- *     exists on staging only. One place to write, no ambiguity about which
- *     branch is being edited — and doing it in the build rather than the deploy
- *     workflow means a local production build matches CI.
+ *   - It ships to both origins, and each writes to its own branch: production to
+ *     master, staging to staging. Content is written on production and goes live;
+ *     staging exists to test code and design changes, and its editor lets the CMS
+ *     itself be exercised after such a change without touching live writing.
+ *
+ * Because the two look identical, the banner below states which site and which
+ * branch, unmissably. That label is the only thing standing between "I edited the
+ * live site" and "I edited the test site".
  *
  * Deliberately not using BaseLayout — the CMS owns the whole viewport and none of
  * the site's own typography or chrome should apply to it.
@@ -26,6 +27,11 @@ export const prerender = true;
 // Pinned to a patch range. On a 0.x line a minor bump can break, and an editor
 // that silently changes under you is worse than one that lags.
 const CMS_SCRIPT = 'https://unpkg.com/@sveltia/cms@~0.193.1/dist/sveltia-cms.js';
+
+const origin = Astro.site?.origin ?? `https://${SITE.domain}`;
+const isProduction = origin === `https://${SITE.domain}`;
+const branch = isProduction ? 'master' : 'staging';
+const environment = isProduction ? 'LIVE SITE' : 'TEST SITE';
 ---
 
 <!doctype html>
@@ -78,9 +84,55 @@ const CMS_SCRIPT = 'https://unpkg.com/@sveltia/cms@~0.193.1/dist/sveltia-cms.js'
         border-radius: 2px;
         padding: 0.1em 0.35em;
       }
+
+      /* Stays visible above the editor once it loads. The two environments are
+         visually identical otherwise, and this is the only thing distinguishing
+         "editing the live site" from "editing the test site". */
+      #env {
+        position: fixed;
+        inset: 0 0 auto 0;
+        z-index: 9999;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: center;
+        gap: 0.35rem 0.75rem;
+        padding: 0.3rem 0.75rem;
+        font-family: system-ui, sans-serif;
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #fbfaf8;
+        pointer-events: none;
+      }
+
+      #env.is-live {
+        background: #a32e33;
+      }
+
+      #env.is-test {
+        background: #3d3d49;
+      }
+
+      #env .env-detail {
+        letter-spacing: 0.04em;
+        text-transform: none;
+        opacity: 0.85;
+      }
+
+      body {
+        padding-top: 1.6rem;
+      }
     </style>
   </head>
   <body>
+    <div id="env" class={isProduction ? 'is-live' : 'is-test'}>
+      <strong>{environment}</strong>
+      <span class="env-detail">
+        {origin.replace('https://', '')} · saves commit to <code>{branch}</code>
+      </span>
+    </div>
+
     <div id="boot">
       <p><strong>Loading the editor…</strong></p>
 
@@ -96,8 +148,15 @@ const CMS_SCRIPT = 'https://unpkg.com/@sveltia/cms@~0.193.1/dist/sveltia-cms.js'
 
       <p>
         The token needs <strong>Contents: Read and write</strong> on
-        <code>{SITE.repo}</code> and nothing else. Everything you save commits to
-        <code>staging</code>.
+        <code>{SITE.repo}</code> and nothing else.
+      </p>
+
+      <p>
+        {
+          isProduction
+            ? 'Saves here commit to master and go live on the public site in about two minutes.'
+            : 'Saves here commit to staging and appear on the test site only. Nothing written here reaches the public site.'
+        }
       </p>
 
       <noscript>

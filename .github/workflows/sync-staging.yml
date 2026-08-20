@@ -1,0 +1,79 @@
+name: Sync Staging from Production
+
+# Brings staging up to date with master, so code and design work starts from the
+# content that is actually live.
+#
+# Needed because content is written on production and commits to master. Without
+# this, staging drifts: you would be testing a new design against posts from
+# whenever staging was last touched, and the promotion merge would carry a
+# needlessly large diff.
+#
+# Run this before starting a change, not after.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: List what would be brought across, then stop
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: sync-staging
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          fetch-depth: 0
+
+      - name: Merge master into staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --no-tags origin master
+
+          pending="$(git log --oneline staging..origin/master)"
+          if [ -z "$pending" ]; then
+            echo "::notice::staging is already up to date with master."
+            exit 0
+          fi
+
+          {
+            echo "### Bringing production content into staging"
+            echo
+            echo '```'
+            echo "$pending"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "::notice::Dry run — nothing was pushed."
+            exit 0
+          fi
+
+          if ! git merge --no-edit -m "chore: sync staging with production" origin/master; then
+            {
+              echo "### Sync stopped on a conflict"
+              echo
+              echo "The same file changed on both branches. staging is unchanged."
+              echo
+              echo '```'
+              echo "git checkout staging && git pull"
+              echo "git merge origin/master   # fix the conflicts it reports"
+              echo "git push origin staging"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          git push origin staging

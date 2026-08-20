@@ -184,37 +184,50 @@ function collectionFor(section: Section) {
   };
 }
 
-const config = {
-  backend: {
-    name: 'github',
-    repo: SITE.repo,
-    // Every save commits to staging, which deploys in about ninety seconds.
-    // Publishing to production is a separate one-tap workflow, so nothing
-    // written here can reach the live site by accident.
-    branch: 'staging',
-    commit_messages: {
-      create: 'content: add {{collection}} - {{slug}}',
-      update: 'content: update {{collection}} - {{slug}}',
-      delete: 'content: remove {{collection}} - {{slug}}',
-      uploadMedia: 'content: upload {{path}}',
-      deleteMedia: 'content: remove {{path}}',
+/**
+ * Which branch this editor writes to depends on which site is serving it.
+ *
+ * Content is written on production and goes live; staging exists to test code and
+ * design changes, and its editor writes to the staging branch so the CMS itself
+ * can be exercised after a change without touching live content.
+ *
+ * Deriving it from the origin rather than hardcoding it means one build produces
+ * the right editor for whichever site it lands on, and the two can never quietly
+ * point at the same place.
+ */
+function configFor(origin: string) {
+  const isProduction = origin === `https://${SITE.domain}`;
+
+  return {
+    backend: {
+      name: 'github',
+      repo: SITE.repo,
+      branch: isProduction ? 'master' : 'staging',
+      commit_messages: {
+        create: 'content: add {{collection}} - {{slug}}',
+        update: 'content: update {{collection}} - {{slug}}',
+        delete: 'content: remove {{collection}} - {{slug}}',
+        uploadMedia: 'content: upload {{path}}',
+        deleteMedia: 'content: remove {{path}}',
+      },
     },
-  },
-  publish_mode: 'simple',
-  media_folder: 'public/uploads',
-  public_folder: '/uploads',
-  // Empty optional fields are dropped rather than written as empty strings,
-  // which would fail schema validation on the next build.
-  omit_empty_optional_fields: true,
-  collections: SECTIONS.map(collectionFor),
-};
+    publish_mode: 'simple',
+    media_folder: 'public/uploads',
+    public_folder: '/uploads',
+    // Empty optional fields are dropped rather than written as empty strings,
+    // which would fail schema validation on the next build.
+    omit_empty_optional_fields: true,
+    collections: SECTIONS.map(collectionFor),
+  };
+}
 
-const body = JSON.stringify(config, null, 2);
+export const GET: APIRoute = ({ site }) => {
+  const origin = site?.origin ?? `https://${SITE.domain}`;
 
-export const GET: APIRoute = () =>
-  new Response(body, {
+  return new Response(JSON.stringify(configFor(origin), null, 2), {
     headers: {
       'Content-Type': 'text/yaml; charset=utf-8',
       'Cache-Control': 'no-cache',
     },
   });
+};
