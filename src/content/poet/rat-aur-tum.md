@@ -5,7 +5,7 @@ excerpt: Rat aur tum dono hi mujhe pasand ho
 draft: true
 tags: []
 format: verse
-lang: hi-Latn
+lang: hi
 cover: ''
 coverAlt: ''
 audio: ''
