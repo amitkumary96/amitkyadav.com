@@ -1,0 +1,441 @@
+---
+import { openingLines, type Post } from '../lib/posts';
+
+interface Props {
+  /** One post per section, in the order they should rotate. */
+  posts: Post[];
+  /** How long a slide holds before the next one scrolls in. */
+  intervalMs?: number;
+}
+
+const { posts, intervalMs = 7000 } = Astro.props;
+
+/**
+ * The showcase is a horizontal scroller with scroll-snap, not a stack of
+ * absolutely-positioned slides faded in and out.
+ *
+ * That choice does the work: panning and swiping come from the browser, the
+ * snap points are declarative, and the whole thing is readable with no
+ * JavaScript at all — which for a carousel is normally the first thing to
+ * break. The script below only advances the scroll position on a timer and
+ * keeps the dots in step; nothing about the layout depends on it running.
+ */
+
+/**
+ * Verse leads with its opening couplet; prose leads with its title and one
+ * line of its own summary. Resolved here so the loop renders a single
+ * composition — accent rule, eyebrow, display type, link — across four
+ * different kinds of writing.
+ */
+const slides = posts.map((post) => {
+  const couplet = post.format === 'verse' ? openingLines(post, 2) : [];
+  const quoted = couplet.length > 0;
+
+  return {
+    post,
+    couplet,
+    quoted,
+    /** A quoted couplet carries a slide; a title beside it sits a shade quieter. */
+    displayStyle: quoted
+      ? 'font-size: clamp(1.55rem, 1.05rem + 2.2vw, 2.45rem); line-height: 1.5;'
+      : 'font-size: clamp(1.35rem, 1rem + 1.55vw, 2rem); line-height: 1.34;',
+    /** Prose only. A poem's own words are already above. */
+    blurb: quoted ? undefined : (post.excerpt ?? openingLines(post, 1)[0]),
+    /**
+     * A poem is signed with its title, the way the share cards do it. Prose has
+     * already shown its title, so the link names what is being opened instead —
+     * which is the whole reason `labelSingular` exists in the section config.
+     */
+    linkText: quoted
+      ? `— ${post.title} →`
+      : `Read the ${post.section.labelSingular.toLowerCase()} →`,
+  };
+});
+
+/** One slide is a static card: nothing to rotate, so no controls are rendered. */
+const rotates = slides.length > 1;
+
+/**
+ * The only control is the row of dots.
+ *
+ * Previous/next chevrons and a pause button were here too, and together they
+ * read as a control panel bolted to a page that is otherwise a rule, an eyebrow
+ * and some words. A dot already says where you are and goes anywhere.
+ *
+ * Losing the pause button moves a requirement into the script: content that
+ * moves on its own for more than five seconds has to offer some way to stop it
+ * (WCAG 2.2.2). So the rotation now ends for good the moment the reader touches
+ * the carousel — a dot, a swipe, an arrow key — rather than merely pausing
+ * while they hover. Taking hold of it is the stop.
+ */
+---
+
+<section
+  class="carousel article-measure"
+  aria-roledescription="carousel"
+  aria-label="Featured writing"
+  data-carousel
+  data-interval={intervalMs}
+>
+  <div class="carousel-track" data-carousel-track>
+    {
+      slides.map(({ post, couplet, quoted, displayStyle, blurb, linkText }, index) => (
+        <article
+          class="carousel-slide"
+          data-carousel-slide
+          role="group"
+          aria-roledescription="slide"
+          aria-label={`${index + 1} of ${slides.length}: ${post.section.label}`}
+        >
+          <div class="mb-6 h-[3px] w-16 bg-madder" aria-hidden="true" />
+
+          <p class="label label-accent mb-6">
+            {post.section.label}
+            {post.section.native && (
+              <span lang="hi" class="font-deva">
+                {' '}
+                · {post.section.native}
+              </span>
+            )}
+            {post.draft && <span class="text-ink-faint"> · Draft</span>}
+          </p>
+
+          {quoted ? (
+            <blockquote
+              lang={post.lang}
+              class:list={[
+                'font-semibold text-ink',
+                post.lang === 'hi' ? 'font-deva' : 'font-serif',
+              ]}
+              style={displayStyle}
+            >
+              {couplet.map((line) => (
+                <span class="block">{line}</span>
+              ))}
+            </blockquote>
+          ) : (
+            <p
+              lang={post.lang}
+              class:list={[
+                'font-semibold text-ink',
+                post.section.register === 'workshop'
+                  ? 'font-sans -tracking-[0.015em]'
+                  : 'font-serif',
+              ]}
+              style={displayStyle}
+            >
+              {post.title}
+            </p>
+          )}
+
+          {blurb && (
+            <p lang={post.lang} class="mt-4 line-clamp-3 text-ink-soft">
+              {blurb}
+            </p>
+          )}
+
+          <p class="mt-auto pt-6">
+            <a href={post.url} class="label text-madder-ink no-underline">
+              {linkText}
+            </a>
+          </p>
+        </article>
+      ))
+    }
+  </div>
+
+  {
+    rotates && (
+      <div class="carousel-controls mt-7 flex items-center justify-end border-t border-rule pt-4">
+        {slides.map(({ post }, index) => (
+          <button
+            type="button"
+            class="carousel-dot"
+            data-carousel-dot
+            aria-current={index === 0 ? 'true' : undefined}
+            aria-label={`Show ${post.section.label}: ${post.title}`}
+          >
+            <span aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+    )
+  }
+</section>
+
+<style>
+  .carousel-track {
+    /**
+     * The track runs a little wider than the text column and every slide pads
+     * its content back in by the same amount, so the clipping edge falls in
+     * blank paper rather than through type.
+     *
+     * Without it the next slide's first glyph printed a stray tick against the
+     * right edge of the column: Devanagari matras overhang their origin, so the
+     * character sitting exactly on the boundary painted a pixel inside it. It
+     * read as a rendering fault on the most prominent element of the site.
+     *
+     * Safe at every width because the shell's own gutter — clamp(1.1rem, 4vw,
+     * 2.5rem) — is never narrower than this, so the wider track still cannot
+     * spill off the page.
+     */
+    --bleed: 1rem;
+    margin-inline: calc(-1 * var(--bleed));
+
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    /* Panning stays inside the carousel rather than triggering the browser's
+       back gesture or rubber-banding the page sideways. */
+    overscroll-behavior-x: contain;
+    /* The dots already say where you are. A scrollbar drawn under display type
+       is only noise. */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .carousel-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .carousel-slide {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    /* Column, so the link can be pushed to the bottom: every slide's call to
+       action then lands on the same line however short its quote is. Slides are
+       flex items in a row, so they already share the tallest one's height and
+       the rotation never changes the page's geometry. */
+    display: flex;
+    flex-direction: column;
+    min-height: 15rem;
+    /* Puts the content back on the column the rest of the page is set to. */
+    padding-inline: var(--bleed);
+  }
+
+  .carousel-dot {
+    display: grid;
+    place-items: center;
+    /* A 24px target around a 6px mark — WCAG 2.5.8, which a bare dot fails. */
+    min-width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .carousel-dot > span {
+    display: block;
+    height: 6px;
+    width: 6px;
+    border-radius: 999px;
+    background: var(--rule-firm);
+    transition:
+      width 0.4s cubic-bezier(0.19, 1, 0.22, 1),
+      background-color 0.3s ease;
+  }
+
+  .carousel-dot:hover > span {
+    background: var(--ink-faint);
+  }
+
+  .carousel-dot[aria-current='true'] > span {
+    width: 1.15rem;
+    background: var(--madder);
+  }
+
+  /* Without JavaScript nothing rotates and the controls would be dead, so the
+     slides stack and all of them are readable. Same guard as the recitation
+     transport. */
+  :global(html.no-js) .carousel-track {
+    display: block;
+    overflow-x: visible;
+    margin-inline: 0;
+  }
+
+  :global(html.no-js) .carousel-slide {
+    min-height: 0;
+    padding-inline: 0;
+  }
+
+  :global(html.no-js) .carousel-slide + .carousel-slide {
+    margin-top: 2.5rem;
+    border-top: 1px solid var(--rule);
+    padding-top: 2.5rem;
+  }
+
+  :global(html.no-js) .carousel-controls {
+    display: none;
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-carousel]').forEach((root) => {
+    const track = root.querySelector<HTMLElement>('[data-carousel-track]');
+    const slides = [...root.querySelectorAll<HTMLElement>('[data-carousel-slide]')];
+    const dots = [...root.querySelectorAll<HTMLButtonElement>('[data-carousel-dot]')];
+
+    // A single slide is a static card, and its dots were never rendered.
+    if (!track || slides.length < 2) return;
+
+    const interval = Number(root.dataset.interval) || 7000;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    let index = 0;
+    let timer: number | undefined;
+
+    /**
+     * Rotation is suspended, not stopped, while any of these hold: the pointer
+     * is over the carousel, focus is inside a slide, the tab is in the
+     * background, or the carousel has scrolled out of view. Animating a hidden
+     * element is wasted work, and moving text out from under someone's cursor
+     * mid-sentence is the reason carousels are disliked.
+     */
+    const holds = { hover: false, focus: false, offscreen: false };
+
+    /**
+     * Over for the rest of the visit, as opposed to held. Set by a
+     * reduced-motion preference, or by the reader taking hold of the carousel —
+     * which is the only way to stop it now that there is no pause button, so it
+     * is deliberately one-way. Nothing sets this back to false.
+     */
+    let stopped = reducedMotion.matches;
+
+    const shouldRun = () =>
+      !stopped && !holds.hover && !holds.focus && !holds.offscreen && !document.hidden;
+
+    /** Rebuilds the timer from the current holds. Also restarts the dwell. */
+    const sync = () => {
+      if (timer !== undefined) {
+        window.clearInterval(timer);
+        timer = undefined;
+      }
+      if (shouldRun()) timer = window.setInterval(() => show(index + 1), interval);
+    };
+
+    const hold = (key: keyof typeof holds, value: boolean) => {
+      if (holds[key] === value) return;
+      holds[key] = value;
+      sync();
+    };
+
+    /**
+     * Where a slide sits in the track's scroll space. Measured rather than
+     * multiplied out from an assumed slide width, so a future gap or inline
+     * padding cannot silently offset every jump.
+     */
+    const offsetOf = (i: number) =>
+      slides[i].getBoundingClientRect().left -
+      track.getBoundingClientRect().left +
+      track.scrollLeft;
+
+    const paint = (i: number) => {
+      index = i;
+      dots.forEach((dot, n) => {
+        if (n === i) dot.setAttribute('aria-current', 'true');
+        else dot.removeAttribute('aria-current');
+      });
+    };
+
+    const show = (target: number, smooth = true) => {
+      const i = (target + slides.length) % slides.length;
+      // Painted before the scroll settles: the dot should answer the click, not
+      // the animation. The scroll listener re-derives the same index anyway.
+      paint(i);
+      track.scrollTo({
+        left: offsetOf(i),
+        // `behavior: 'smooth'` overrides the CSS, so reduced motion has to be
+        // honoured explicitly here rather than left to scroll-behavior.
+        behavior: smooth && !reducedMotion.matches ? 'smooth' : 'auto',
+      });
+    };
+
+    // Keeps the dots honest when the reader swipes or drags instead of using
+    // the controls.
+    let frame = 0;
+    track.addEventListener(
+      'scroll',
+      () => {
+        if (frame) return;
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          const width = slides[0].getBoundingClientRect().width;
+          if (width === 0) return;
+          const nearest = Math.round(track.scrollLeft / width);
+          paint(Math.min(slides.length - 1, Math.max(0, nearest)));
+        });
+      },
+      { passive: true },
+    );
+
+    /**
+     * Taking hold of the carousel ends the rotation for good — the stop
+     * mechanism that the removed pause button used to be. A reader who has
+     * started swiping through the slides themselves should never be pulled
+     * along by a timer, and on a touch screen this is the only gesture
+     * available to say so.
+     */
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      sync();
+    };
+
+    for (const type of ['pointerdown', 'wheel', 'keydown']) {
+      track.addEventListener(type, stop, { passive: true });
+    }
+
+    /**
+     * Hover is only wired up where a pointer can actually leave again. On touch
+     * a synthesised mouseenter with no matching mouseleave would hold the
+     * rotation for the rest of the visit.
+     */
+    if (window.matchMedia('(hover: hover)').matches) {
+      root.addEventListener('mouseenter', () => hold('hover', true));
+      root.addEventListener('mouseleave', () => hold('hover', false));
+    }
+
+    // Bound to the track rather than the whole carousel, so tabbing onto a dot
+    // is navigation rather than a hold on the rotation.
+    track.addEventListener('focusin', () => hold('focus', true));
+    track.addEventListener('focusout', (event) => {
+      hold('focus', track.contains(event.relatedTarget as Node | null));
+    });
+
+    document.addEventListener('visibilitychange', sync);
+
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) hold('offscreen', !entry.isIntersecting);
+        },
+        { threshold: 0.3 },
+      ).observe(root);
+    }
+
+    // Choosing a slide is the same act of taking over, so a dot stops the
+    // rotation too and then simply navigates.
+    dots.forEach((dot, i) =>
+      dot.addEventListener('click', () => {
+        stop();
+        show(i);
+      }),
+    );
+
+    // A width change moves every snap point. Without this the track can be left
+    // showing two half slides, which reads as a broken layout.
+    let resizeFrame = 0;
+    window.addEventListener('resize', () => {
+      if (resizeFrame) return;
+      resizeFrame = requestAnimationFrame(() => {
+        resizeFrame = 0;
+        show(index, false);
+      });
+    });
+
+    // Turning reduced motion on mid-visit should stop the rotation, not merely
+    // make it jump. Turning it off does not restart one the reader has stopped.
+    reducedMotion.addEventListener('change', () => {
+      if (reducedMotion.matches) stop();
+    });
+
+    // Starts the timer, unless a reduced-motion preference already stopped it.
+    sync();
+  });
+</script>

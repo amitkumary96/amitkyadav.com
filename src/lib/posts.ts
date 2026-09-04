@@ -260,6 +260,33 @@ export async function getLatestPerSection(): Promise<Map<SectionId, Post | undef
   return new Map(entries);
 }
 
+/**
+ * One post per section, for the homepage's rotating showcase.
+ *
+ * The hero used to be the newest poem alone, which meant a visitor's first
+ * screenful advertised one of the four things this site is. Taking the newest
+ * post from every section instead means the rotation covers all of them, and a
+ * section that has nothing published simply has no slide rather than an empty
+ * one.
+ *
+ * Finished work is preferred over a draft. Drafts are visible in development
+ * and on staging, and quoting a fixture in display type — "this is not a poem,
+ * only a fixture" — makes every review of the design misleading. A section
+ * whose only writing is unfinished still gets its slide, marked as a draft,
+ * because otherwise the carousel cannot be looked at before the writing exists.
+ *
+ * Sorted newest first: the showcase is for what is current. The section order
+ * is already spelled out twice further down the same page.
+ */
+export async function getShowcase(): Promise<Post[]> {
+  const perSection = await Promise.all(SECTIONS.map((s) => getSectionPosts(s.id)));
+
+  return perSection
+    .map((posts) => posts.find((post) => !post.draft) ?? posts[0])
+    .filter((post): post is Post => post !== undefined)
+    .sort(byDateDesc);
+}
+
 export interface Series {
   readonly slug: string;
   readonly name: string;
