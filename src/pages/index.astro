@@ -1,39 +1,36 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FeaturedCarousel from '../components/FeaturedCarousel.astro';
 import { SECTIONS } from '../config/site';
 import {
   formatDateShort,
   getAllPosts,
   getLatestPerSection,
-  getSectionPosts,
+  getShowcase,
   isoDate,
-  openingLines,
 } from '../lib/posts';
 
 export const prerender = true;
 
 /**
- * The homepage leads with a couplet, not a biography.
+ * The homepage leads with the writing, not a biography.
  *
  * It used to open with the site title as an h1 — the same string as the header
  * logo, 150 pixels above it — at the largest type size on the page. So the most
  * confident thing on the site was information the visitor already had, and a
  * screenful showed one post.
  *
- * Now the newest poem's opening lines carry the hero. It borrows its composition
- * from the generated share cards: accent rule, eyebrow, then the words. The point
- * is that this is a place where someone writes, and that is specific to Amit in a
- * way a centred column never is.
+ * A poem's opening lines replaced it, borrowing their composition from the
+ * generated share cards: accent rule, eyebrow, then the words. That fixed the
+ * hero but narrowed it — the first screenful advertised one of the four things
+ * this site is, and a visitor who does not read Hindi verse had no reason to
+ * believe there was anything else.
+ *
+ * So the hero now rotates: the same composition, one slide per section, moving
+ * on its own. See FeaturedCarousel for why it is a scroll-snap track rather
+ * than a stack of faded layers.
  */
-/**
- * Drafts are excluded from the hero even on staging, where they are otherwise
- * visible. The hero is a showcase, and the newest poem on staging is a test
- * fixture — quoting "this is not a poem, only a fixture" in display type would
- * make every review of the design misleading.
- */
-const poems = (await getSectionPosts('poet')).filter((poem) => !poem.draft);
-const featuredPoem = poems[0];
-const couplet = featuredPoem ? openingLines(featuredPoem, 2) : [];
+const showcase = await getShowcase();
 
 /** Dense and scannable: the hero supplies the feeling, this supplies the map. */
 const recent = (await getAllPosts()).slice(0, 6);
@@ -42,42 +39,12 @@ const latestPerSection = await getLatestPerSection();
 
 <BaseLayout>
   <div class="register-literary">
-    {
-      couplet.length > 0 && featuredPoem && (
-        <section class="article-measure" aria-labelledby="couplet-heading">
-          <div class="mb-6 h-[3px] w-16 bg-madder" aria-hidden="true"></div>
-
-          <p id="couplet-heading" class="label label-accent mb-6">
-            {featuredPoem.section.label}
-            {featuredPoem.section.native && (
-              <span lang="hi" class="font-deva"> · {featuredPoem.section.native}</span>
-            )}
-          </p>
-
-          <blockquote
-            lang={featuredPoem.lang}
-            class:list={[
-              'font-semibold text-ink',
-              featuredPoem.lang === 'hi' ? 'font-deva' : 'font-serif',
-            ]}
-            style="font-size: clamp(1.6rem, 1.1rem + 2.4vw, 2.6rem); line-height: 1.5;"
-          >
-            {couplet.map((line) => <span class="block">{line}</span>)}
-          </blockquote>
-
-          <p class="mt-6">
-            <a href={featuredPoem.url} class="label text-madder-ink no-underline">
-              — {featuredPoem.title} →
-            </a>
-          </p>
-        </section>
-      )
-    }
+    {showcase.length > 0 && <FeaturedCarousel posts={showcase} />}
 
     <section
       class:list={[
         'article-measure',
-        couplet.length > 0 ? 'mt-16 border-t border-rule pt-10' : '',
+        showcase.length > 0 ? 'mt-16 border-t border-rule pt-10' : '',
       ]}
     >
       <h1 class="font-serif text-[1.6rem] font-semibold leading-snug -tracking-[0.012em]">
