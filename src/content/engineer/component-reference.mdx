@@ -1,86 +1,63 @@
 ---
-title: Component Reference
+title: 'ClawBot: An AI Coding Agent'
 date: 2026-08-19
+excerpt: ''
 draft: true
+tags:
+  - fixture
+  - MDX
+  - C++
+  - QA & Testing
+format: prose
 lang: en
-tags: ["fixture", "MDX", "C++", "QA & Testing"]
 cover: ./_assets/fixture-cover.png
 coverAlt: A flat gradient from madder red to warm paper, standing in for a real cover image
-excerpt: A draft fixture exercising every in-body component, the cover image pipeline, and tag slugs that used to collide.
+audio: ''
+audioLabel: ''
+series: null
 ---
 
-A deliberately boring post whose only job is to make sure nothing here rots.
-Every block below renders on each build, so a broken component becomes a build
-failure instead of something discovered months later in a real post.
+AI tools have come a long way from simply answering coding questions or generating small code snippets. Today, tools like ClawBot can work more directly with a project and help developers complete actual development tasks.
 
-## Callouts
+At a high level, ClawBot can be thought of as an **AI coding agent** that works alongside a developer. Instead of only suggesting code, it can inspect the project, understand the task, make changes, run commands, and iterate based on the results.
 
-<Callout>
-  A plain note. Set aside by a rule and a label rather than by colour, so the
-  page keeps to one accent hue.
-</Callout>
+## How Is It Different?
 
-<Callout type="warning" title="Worth knowing">
-  The warning variant is the only one that borrows the accent, which is why it
-  should stay rare.
-</Callout>
+With a typical AI chatbot, the workflow is:
 
-<Callout type="aside">
-  An authorial aside — dotted rule, no fill.
-</Callout>
+**Ask → Get an answer → Implement it yourself**
 
-## Code
+With a coding agent, it becomes:
 
-Syntax highlighting happens at build time, with no JavaScript shipped:
+**Give a task → Analyze the project → Make changes → Test/check → Fix issues**
 
-```ts
-export function slugify(input: string): string {
-  // "C++" and "C" used to collapse to the same slug.
-  return input.replace(/\+\+/g, '-plus-plus');
-}
-```
+For example, if you ask ClawBot to *"add dark mode to the application,"* it can look at the existing structure, identify the relevant files, implement the changes, and check whether the application still works.
 
-Inline `code` should sit in a hairline box without stray backticks around it.
+This becomes especially useful in existing projects where understanding the current code is just as important as writing new code.
 
-## A captioned figure
+## Where Can It Help?
 
-<Figure caption="The cover image, reused here to keep the caption path exercised.">
+ClawBot can be useful for tasks such as:
 
-![A flat madder-to-paper gradient](./_assets/fixture-cover.png)
+* **Feature development** – implementing new functionality
+* **Bug fixing** – investigating and fixing issues
+* **Refactoring** – cleaning up existing code
+* **Testing** – creating or running tests
+* **Codebase understanding** – finding how different parts of a project work
+* **Prototyping** – quickly turning an idea into a working version
 
-</Figure>
+## The Developer Still Matters
 
-## A gallery
+The biggest advantage is not that AI can write code faster. It is that it can handle many of the repetitive steps involved in development.
 
-Two of the same image, which is enough to prove the grid and the object-fit
-cropping behave:
+However, the output still needs to be reviewed. An AI agent can misunderstand requirements, introduce unnecessary changes, or fix one issue while creating another.
 
-<Gallery columns={2} caption="One image twice — the grid is what is under test.">
+So the practical approach is not **AI replacing the developer**, but **AI handling execution while the developer provides direction and reviews the result**.
 
-![Gradient, left cell](./_assets/fixture-cover.png)
+## Why It Matters
 
-![Gradient, right cell](./_assets/fixture-cover.png)
+ClawBot is part of a larger shift from asking AI for individual pieces of code to giving AI **complete tasks and goals**.
 
-</Gallery>
+Instead of telling the computer every step, you describe what you want to achieve and let the agent figure out much of the work required to get there.
 
-## Video
-
-Nothing loads until the panel is clicked, and then only from the nocookie
-domain:
-
-<Video id="dQw4w9WgXcQ" title="Placeholder video" caption="Replace the id with a real one when this pattern is used for real." />
-
-## Ordinary prose furniture
-
-A blockquote, because the typography plugin styles it and nobody would notice if
-that broke:
-
-> Quality is not an act, it is a habit.
-
-1. An ordered list
-2. with two items
-
-- and an unordered one
-- with two more
-
-Delete this post once real components and real writing have replaced it.
+For developers and QA engineers, this can mean less time spent on repetitive tasks and more time spent on the parts that actually require human judgment—**requirements, quality, logic, and validation**.
