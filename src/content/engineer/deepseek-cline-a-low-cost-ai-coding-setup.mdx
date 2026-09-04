@@ -1,0 +1,75 @@
+---
+title: 'DeepSeek + Cline: A Low-Cost AI Coding Setup'
+date: 2026-09-04
+excerpt: ''
+draft: false
+tags: []
+format: prose
+lang: en
+cover: ''
+coverAlt: ''
+audio: ''
+audioLabel: ''
+series: null
+---
+
+If you use AI regularly for coding, API costs can add up quickly. One option that stands out for its pricing is **DeepSeek**.
+
+DeepSeek provides API access on a pay-as-you-go basis, so instead of paying a fixed monthly subscription, you pay for the tokens you actually use. Its current V4 lineup includes **DeepSeek-V4-Flash** and **DeepSeek-V4-Pro**, with Flash being the more budget-friendly option.
+
+At the time of writing, DeepSeek-V4-Flash costs **$0.22 per 1M input tokens (cache miss) and $0.66 per 1M output tokens during off-peak hours**, with peak-hour rates being higher. Cached input is significantly cheaper.
+
+This makes it particularly interesting for developers who want to use an AI coding agent without committing to an expensive monthly plan.
+
+## How to Get Started
+
+The basic setup is quite simple:
+
+**1. Create a DeepSeek account**
+
+Go to the DeepSeek Platform and create an account.
+
+**2. Create an API Key**
+
+Open the API Keys section, create a new key, and copy it somewhere secure. The key is shown only when it is created.
+
+**3. Add Credits**
+
+DeepSeek API usage works on a balance system. You add credit to your account, and the API charges are deducted based on your actual token usage.
+
+You don't need to buy a traditional "monthly API subscription"—it's essentially **top-up and pay for what you use**.
+
+## Using DeepSeek in VS Code with Cline
+
+Once you have the API key, the next step is connecting it to **Cline**, an AI coding assistant that runs directly inside VS Code.
+
+Install the Cline extension from the VS Code Extensions marketplace and open its settings.
+
+In Cline, you can select **DeepSeek** as the API provider, enter your DeepSeek API key, and select the model you want to use.
+
+If the required DeepSeek model is not available in the provider's model list, Cline also supports **OpenAI-compatible providers**, allowing you to enter DeepSeek's API endpoint manually.
+
+The basic configuration is:
+
+```text
+API Provider: OpenAI Compatible
+Base URL: https://api.deepseek.com
+API Key: Your DeepSeek API key
+Model ID: deepseek-v4-flash
+```
+
+DeepSeek officially provides an OpenAI-compatible API endpoint, which is why this setup works with tools such as Cline.
+
+## Why This Setup Is Useful
+
+The combination is simple:
+
+**DeepSeek → Provides the AI model and API**
+**Cline → Connects that model to VS Code**
+**You → Give the task and review the changes**
+
+Cline can read your project, modify files, run commands, and work through tasks iteratively. That makes DeepSeek's relatively low API cost more useful than simply using it as a normal chatbot.
+
+For developers who do a lot of coding with AI, this setup can be a practical way to **keep costs under control while still getting an agent directly inside VS Code**.
+
+One important point: API prices can change, and DeepSeek introduced peak/off-peak pricing in August 2026, so it's worth checking the official pricing page before adding a large balance.
